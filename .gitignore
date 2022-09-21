@@ -1,0 +1,12 @@
+api_key.json
+client_secrets.json
+config.json
+requirements.txt
+
+*.xlsx
+*.pickle
+
+/ytenv
+/transcripts_400
+/transcripts
+/transcripts*
