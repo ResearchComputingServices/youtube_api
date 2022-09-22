@@ -14,6 +14,8 @@ import pathlib
 import traceback
 import sys
 from youtube_transcript_api import YouTubeTranscriptApi
+from werkzeug.utils import secure_filename
+
 
 
 
@@ -52,13 +54,14 @@ def convert_to_local_zone(datestring):
     except:
         return datestring
 
-def write_transcript_to_file(transcript,video_title):
+def write_transcript_to_file(transcript,video_title,video_id):
     try:
 
         directory = 'transcripts'
         abs_path = pathlib.Path().resolve()
         full_path = os.path.join(abs_path, directory)
-        filename = video_title + '.txt'
+        name = video_title + '_' + video_id + '.txt'
+        filename = secure_filename(name)
         file_path = os.path.join(full_path, filename)
 
         with open(file_path, 'w') as f:
@@ -151,7 +154,7 @@ def create_dict(item):
         transcript_dict = get_video_transcript(videoId)
         transcript_filename=''
         if transcript_dict['data']:
-            transcript_filename = write_transcript_to_file(transcript_dict["data"], title)
+            transcript_filename = write_transcript_to_file(transcript_dict["data"], title, videoId)
 
         metadata = {
             "videoId": videoId,
@@ -246,8 +249,8 @@ def get_playlist_info(youtube, playlist):
 
         nextPageToken = responseVideosList.get('nextPageToken')
 
-        if not nextPageToken or pages == 1:
-        #if not nextPageToken:
+        #if not nextPageToken or pages == 1:
+        if not nextPageToken:
             break;
 
     #Export info to excel
