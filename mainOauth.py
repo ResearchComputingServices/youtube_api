@@ -217,7 +217,7 @@ def get_playlist_metadata(youtube, playlist):
         requestVideosList = youtube.playlistItems().list(
             part='contentDetails',
             playlistId=playlist,
-            maxResults=20,
+            maxResults=50,  #Maximum 50
             pageToken=nextPageToken
         )
         responseVideosList = requestVideosList.execute()
@@ -317,7 +317,7 @@ def get_comments_for_comment(youtube, parent_id):
             requestCommentsList = youtube.comments().list(
                 part='id,snippet',
                 parentId = parent_id,
-                maxResults=3,   #Maximum is 100
+                maxResults=100,   #Maximum is 100
                 pageToken=nextPageToken
             )
 
@@ -437,7 +437,7 @@ def get_comments_for_video(youtube, video_id, records=None):
             requestCommentsList = youtube.commentThreads().list(
                 part='id,snippet,replies',
                 videoId=video_id,
-                maxResults=10,    #maxResults = 100
+                maxResults=100,    #maxResults = 100
                 pageToken=nextPageToken
             )
 
@@ -480,46 +480,48 @@ def get_playlist_comments(youtube, playlist):
     nextPageToken = None
     pages = 0
 
+    try:
+        videos_ids = []
+        while True:
 
-    videos_ids = []
-    while True:
+            pages = pages + 1
+            # List maxResults videos in a playlist
+            requestVideosList = youtube.playlistItems().list(
+                part='contentDetails',
+                playlistId=playlist,
+                maxResults=50,  #max is 50
+                pageToken=nextPageToken
+            )
 
-        pages = pages + 1
-        # List maxResults videos in a playlist
-        requestVideosList = youtube.playlistItems().list(
-            part='contentDetails',
-            playlistId=playlist,
-            maxResults=3,  #max is 50
-            pageToken=nextPageToken
-        )
+            responseVideosList = requestVideosList.execute()
 
-        responseVideosList = requestVideosList.execute()
+            # Obtain video_id for each video in the response
+            for item in responseVideosList['items']:
+                videoId = item['contentDetails']['videoId']
+                videos_ids.append(videoId)
+            nextPageToken = responseVideosList.get('nextPageToken')
 
-        # Obtain video_id for each video in the response
-        for item in responseVideosList['items']:
-            videoId = item['contentDetails']['videoId']
-            videos_ids.append(videoId)
-        nextPageToken = responseVideosList.get('nextPageToken')
-
-        if not nextPageToken or pages == 2:
-        #if not nextPageToken:
-            break;
-
-
-
-    for video_id in videos_ids:
-        print ("Fetching comments for video " + video_id + "\n")
-        #To export all the comments for all the videos in the same excel file
-        records = get_comments_for_video(youtube,video_id,records)
+            if not nextPageToken or pages == 2:
+            #if not nextPageToken:
+                break;
 
 
-        #To export the comments of a video to a single file
-        #records = get_comments_for_video(youtube, video_id)
-        #if len(records)>0:
-        #    name = video_id + '.xlsx'
-        #    export_to_excel(records, 'comments', name)
+
+        for video_id in videos_ids:
+            print ("Fetching comments for video " + video_id + "\n")
+            #To export all the comments for all the videos in the same excel file
+            records = get_comments_for_video(youtube,video_id,records)
 
 
+            #To export the comments of a video to a single file
+            #records = get_comments_for_video(youtube, video_id)
+            #if len(records)>0:
+            #    name = video_id + '.xlsx'
+            #    export_to_excel(records, 'comments', name)
+    except:
+        print("Error on getting video comments for playlist ")
+        print(sys.exc_info()[0])
+        traceback.print_exc()
 
     # Export info to excel
     export_dict_to_excel(records, 'comments.xlsx')
@@ -584,8 +586,8 @@ def build_service_api_key():
 if __name__ == "__main__":
 
     playlist = get_url_playlist()
-    #youtube = build_service_oauth()
-    youtube  = build_service_api_key()
+    youtube = build_service_oauth()
+    #youtube  = build_service_api_key()
 
     #video_id = '1aBWct8VBXE'
     #get_video_info(youtube, video_id)
