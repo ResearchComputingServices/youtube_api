@@ -501,8 +501,8 @@ def get_playlist_comments(youtube, playlist):
                 videos_ids.append(videoId)
             nextPageToken = responseVideosList.get('nextPageToken')
 
-            if not nextPageToken or pages == 2:
-            #if not nextPageToken:
+            #if not nextPageToken or pages == 3:
+            if not nextPageToken:
                 break;
 
 
@@ -525,6 +525,94 @@ def get_playlist_comments(youtube, playlist):
 
     # Export info to excel
     export_dict_to_excel(records, 'comments.xlsx')
+
+
+
+
+def get_channels_activity(youtube, channel_id):
+
+    record = {}
+    try:
+        requestActivities = youtube.activities().list(
+            part="snippet,contentDetails",
+            channelId=channel_id
+        )
+        responseActivities = requestActivities.execute()
+        for item in responseActivities["items"]:
+            if "snippet" in item:
+                record["activityDate"] = item["snippet"].get("publishedAt","NA")
+                record["activityType"] = item["snippet"].get("type","NA")
+                actType = item["snippet"].get("title",None)
+                if not actType:
+                    actType = item["snippet"].get("channelTitle","NA")
+                record["activityTitle"] = actType
+            break
+    except:
+        print("Error on getting channels activity ")
+        print(sys.exc_info()[0])
+        traceback.print_exc()
+
+    return record
+
+
+
+
+def create_channel_dict(item):
+    try:
+        record ={}
+        record["channelId"] = item["id"]
+        if "snippet" in item:
+            record["title"] = item["snippet"].get("title","NA")
+            record["description"] = item["snippet"].get("description","NA")
+            record["url"] = "https://www.youtube.com/channel/" + item["id"]
+            record["JoinDate"] = item["snippet"].get("publishedAt","NA")
+            record["country"] = item["snippet"].get("country","NA")
+
+        if "statistics" in item:
+            record["viewCount"] = item["statistics"].get("viewCount","NA")
+            record["subscriberCount"] = item["statistics"].get("subscriberCount","NA")
+            record["videoCount"] = item["statistics"].get("videoCount","NA")
+
+        last_activity_date = get_channels_activity(youtube, item["id"])
+        record.update(last_activity_date)
+    except:
+            print("Error on creating channel dictionary ")
+            print(sys.exc_info()[0])
+            traceback.print_exc()
+    return record
+
+
+
+def get_channels_metadata(youtube, channel_ids):
+        try:
+
+            records = {}
+            count = 1
+            # Request all videos
+            channels_request = youtube.channels().list(
+                part="contentDetails,id,snippet,statistics,status,topicDetails",
+                id=','.join(channel_ids)
+            )
+
+            channels_response = channels_request.execute()
+
+            for item in channels_response["items"]:
+                record = create_channel_dict(item)
+                records[count]=record
+                count = count +1
+                #pprint.pprint(item)
+
+
+        except:
+            print("Error on getting channel metadata for channels ")
+            print(sys.exc_info()[0])
+            traceback.print_exc()
+
+        # Export info to excel
+        export_dict_to_excel(records, 'channels_metadata.xlsx')
+
+
+
 
 
 
@@ -589,6 +677,8 @@ if __name__ == "__main__":
     youtube = build_service_oauth()
     #youtube  = build_service_api_key()
 
+    #video_id = 'ZyhVh-qRZPA'
+    #"channelId": "UCCezIgC97PvUuR4_gbFUs5g", from coreys
     #video_id = '1aBWct8VBXE'
     #get_video_info(youtube, video_id)
 
@@ -597,7 +687,19 @@ if __name__ == "__main__":
     #video_id = "XTjtPc0uiG8"
     #video_id = "3Wf29RiKp70"
     #r = get_comments_for_video(youtube,video_id)
+    #pprint.pprint(r)
     #export_to_excel(r, "comments", video_id+'.xlsx')
+
+
+    #channel_ids =["UCfz0X0J88di_4xIQHf-BI1Q",
+    #              "UCTnlmFP9xj9xLok8BAe0ZvA",
+    #              "UCCezIgC97PvUuR4_gbFUs5g",
+    #              "UCo_SB6EMrlQZr5sVrfxRG4w",
+    #              "UC6-MWD2gXDDYrz6QMpn-hOg",
+    #              "UCQKSL9-xVDldauRJFmzyzug",
+    #              "UCwelCMnrRuiUeh1Wjc2Sgfg"]
+    #channel_ids = ["UCfz0X0J88di_4xIQHf-BI1Q"]
+    #get_channels_metadata(youtube, channel_ids)
 
     if youtube:
         if playlist:
