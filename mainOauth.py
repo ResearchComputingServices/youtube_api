@@ -325,8 +325,8 @@ def get_comments_for_comment(youtube, parent_id):
             list.extend(responseCommentsList['items'])
 
             nextPageToken = responseCommentsList.get('nextPageToken')
-            if not nextPageToken or pages == 2:
-            #if not nextPageToken:
+            #if not nextPageToken or pages == 2:
+            if not nextPageToken:
                 break;
     except:
         print("Error on getting replies to comment: " + parent_id)
@@ -360,7 +360,7 @@ def create_comment_dict(records, item):
             metadata["id"] = item["id"]
             metadata["type"] = "Comment to video"
             metadata["Recipient (video or comment)"] = item["snippet"].get("videoId","")
-            url = "https://youtu.be/" + item["id"]
+            url = "https://youtu.be/" + item["snippet"].get("videoId","")
             metadata["video url"] = url
             metadata["comment"] = item["snippet"]["topLevelComment"]["snippet"].get("textDisplay","")
             metadata["authorDisplayName"] = item["snippet"]["topLevelComment"]["snippet"].get("authorDisplayName", "")
@@ -447,12 +447,14 @@ def get_comments_for_video(youtube, video_id, records=None):
                 count = count + 1
                 print('Comment {}'.format(count))
                 records = create_comment_dict(records, item)
+                z = 3 / 0
+                print (z)
 
 
             nextPageToken = responseCommentsList.get('nextPageToken')
 
-            if not nextPageToken or pages == 1:
-            #if not nextPageToken:
+            #if not nextPageToken or pages == 1:
+            if not nextPageToken:
                 break;
     except:
         print("Error on getting video comments: " + video_id)
@@ -506,9 +508,9 @@ def get_playlist_comments(youtube, playlist):
                 break;
 
 
-
+        count = 1
         for video_id in videos_ids:
-            print ("Fetching comments for video " + video_id + "\n")
+            print ("\n ***** Fetching comments for video " + video_id + "\n")
             #To export all the comments for all the videos in the same excel file
             records = get_comments_for_video(youtube,video_id,records)
 
@@ -612,7 +614,334 @@ def get_channels_metadata(youtube, channel_ids):
         export_dict_to_excel(records, 'channels_metadata.xlsx')
 
 
+def create_video_snippet(item):
+    try:
+        now = datetime.datetime.now()
+        current_datetime_str = now.strftime("%Y-%m-%d, %H:%M:%S")
+        videoId = item["id"].get("videoId", "N/A")
 
+        title = ""
+        if "snippet" in item:
+            title = item["snippet"].get("title", "N/A")
+            publishedDate = convert_to_local_zone(item["snippet"].get("publishedAt", None))
+            description = item["snippet"].get("description", "N/A")
+            channelId = item["snippet"].get("channelId", "N/A")
+
+        url = "https://youtu.be/" + videoId
+
+        snippet = {
+            "videoId": videoId,
+            "title": title,
+            "description": description,
+            "url": url,
+            "publishedAt": publishedDate,
+            "scrappedAt": current_datetime_str,
+            "channelId": channelId,
+        }
+    except:
+        print("Error on creating dict: \n")
+        print(item)
+        print("\n")
+        print(sys.exc_info()[0])
+        traceback.print_exc()
+        snippet = {
+            "videoId": "",
+            "title": "",
+            "url": "",
+            "publishedAt": "",
+            "scrappedAt": "",
+            "duration": "",
+        }
+
+    return snippet
+
+
+
+def get_channels_activity(youtube, channel_id):
+
+    record = {}
+    try:
+        requestActivities = youtube.activities().list(
+            part="snippet,contentDetails",
+            channelId=channel_id
+        )
+        responseActivities = requestActivities.execute()
+        for item in responseActivities["items"]:
+            if "snippet" in item:
+                record["activityDate"] = item["snippet"].get("publishedAt","NA")
+                record["activityType"] = item["snippet"].get("type","NA")
+                actType = item["snippet"].get("title",None)
+                if not actType:
+                    actType = item["snippet"].get("channelTitle","NA")
+                record["activityTitle"] = actType
+            break
+    except:
+        print("Error on getting channels activity ")
+        print(sys.exc_info()[0])
+        traceback.print_exc()
+
+    return record
+
+
+
+
+def create_channel_dict(item):
+    try:
+        record ={}
+        record["channelId"] = item["id"]
+        if "snippet" in item:
+            record["title"] = item["snippet"].get("title","NA")
+            record["description"] = item["snippet"].get("description","NA")
+            record["url"] = "https://www.youtube.com/channel/" + item["id"]
+            record["JoinDate"] = item["snippet"].get("publishedAt","NA")
+            record["country"] = item["snippet"].get("country","NA")
+
+        if "statistics" in item:
+            record["viewCount"] = item["statistics"].get("viewCount","NA")
+            record["subscriberCount"] = item["statistics"].get("subscriberCount","NA")
+            record["videoCount"] = item["statistics"].get("videoCount","NA")
+
+        last_activity_date = get_channels_activity(youtube, item["id"])
+        record.update(last_activity_date)
+    except:
+            print("Error on creating channel dictionary ")
+            print(sys.exc_info()[0])
+            traceback.print_exc()
+    return record
+
+
+
+def get_channels_metadata(youtube, channel_ids):
+        try:
+
+            records = {}
+            #count = 1
+            # Request all videos
+            channels_request = youtube.channels().list(
+                part="contentDetails,id,snippet,statistics,status,topicDetails",
+                id=','.join(channel_ids)
+            )
+
+            channels_response = channels_request.execute()
+
+            for item in channels_response["items"]:
+                record = create_channel_dict(item)
+                records[item["id"]]=record
+                #count = count +1
+                #pprint.pprint(item)
+
+
+        except:
+            print("Error on getting channel metadata for channels ")
+            print(sys.exc_info()[0])
+            traceback.print_exc()
+
+        # Export info to excel
+        export_dict_to_excel(records, 'channels_metadata.xlsx')
+
+
+
+def get_channels_videos_snippet(youtube, channel_id):
+
+    records = {}
+    nextPageToken = None
+    count = 1
+    pages = 1
+    try:
+        while True:
+            video_channels_request = youtube.search().list(
+                part="snippet",
+                channelId=channel_id,
+                type="video",
+                maxResults=50,
+                order="date",
+                pageToken=nextPageToken
+
+            )
+            response_videos_channels= video_channels_request.execute()
+
+            for item in response_videos_channels['items']:
+                metadata = create_video_snippet(item)
+                print('Video {}'.format(count))
+                pprint.pprint(metadata)
+                print('\n')
+
+                records[count] = metadata
+                count = count + 1
+
+            nextPageToken = response_videos_channels.get('nextPageToken')
+            pages = pages + 1
+            if not nextPageToken or pages == 2:
+            #if not nextPageToken:
+                break;
+
+    except:
+        print("Error on getting channels activity ")
+        print(sys.exc_info()[0])
+        traceback.print_exc()
+
+    # Export info to excel
+    export_dict_to_excel(records, 'snippet.xlsx')
+
+
+def get_channels_videos(youtube, channel_id):
+
+    records = {}
+    nextPageToken = None
+    count = 1
+    pages = 1
+
+    try:
+        while True:
+            video_channels_request = youtube.search().list(
+                part="snippet",
+                channelId=channel_id,
+                type="video",
+                maxResults=50,
+                order="date",
+                pageToken=nextPageToken
+
+            )
+            response_videos_channels= video_channels_request.execute()
+
+            # Obtain video_id for each video in the response
+            videos_ids = []
+            for item in response_videos_channels['items']:
+                videoId = item["id"].get("videoId", "N/A")
+                videos_ids.append(videoId)
+
+            # Request all videos
+            videos_request = youtube.videos().list(
+                part="contentDetails,snippet,statistics",
+                id=','.join(videos_ids)
+            )
+
+            videos_response = videos_request.execute()
+
+            for item in videos_response['items']:
+                metadata = create_video_metadata(item)
+                print('Video {}'.format(count))
+                pprint.pprint(metadata)
+                print('\n')
+                records[count] = metadata
+                count = count + 1
+
+            nextPageToken = response_videos_channels.get('nextPageToken')
+            pages = pages + 1
+            if not nextPageToken or pages == 2:
+            #if not nextPageToken:
+                break;
+
+    except:
+        print("Error on getting channels activity ")
+        print(sys.exc_info()[0])
+        traceback.print_exc()
+
+    #Export info to excel
+    export_dict_to_excel(records, 'channels_videos.xlsx')
+
+
+def get_keyword_videos_snippet(youtube, query):
+
+    records = {}
+    nextPageToken = None
+
+    count = 1
+    pages = 0
+
+    try:
+        while True:
+            video_channels_request = youtube.search().list(
+                part="snippet",
+                q = query,
+                type="video",
+                maxResults=50,
+                order="relevance",
+                pageToken=nextPageToken
+
+            )
+            response_videos_channels= video_channels_request.execute()
+
+            for item in response_videos_channels['items']:
+                metadata = create_video_snippet(item)
+                print('Video {}'.format(count))
+                pprint.pprint(metadata)
+                print('\n')
+
+                records[count] = metadata
+                count = count + 1
+
+            nextPageToken = response_videos_channels.get('nextPageToken')
+            pages = pages + 1
+
+            if not nextPageToken or pages == 1:
+            #if not nextPageToken:
+                break;
+
+    except:
+        print("Error on getting channels activity ")
+        print(sys.exc_info()[0])
+        traceback.print_exc()
+
+    # Export info to excel
+    export_dict_to_excel(records, 'queries_videos.xlsx')
+
+
+
+def get_keyword_videos(youtube, query):
+    records = {}
+    nextPageToken = None
+    count = 1
+    pages = 1
+
+    try:
+        while True:
+            video_channels_request = youtube.search().list(
+                part="snippet",
+                q=query,
+                type="video",
+                maxResults=10,
+                order="relevance",
+                pageToken=nextPageToken
+
+            )
+            response_videos_channels = video_channels_request.execute()
+
+            # Obtain video_id for each video in the response
+            videos_ids = []
+            for item in response_videos_channels['items']:
+                videoId = item["id"].get("videoId", "N/A")
+                videos_ids.append(videoId)
+
+            # Request all videos
+            videos_request = youtube.videos().list(
+                part="contentDetails,snippet,statistics",
+                id=','.join(videos_ids)
+            )
+
+            videos_response = videos_request.execute()
+
+            for item in videos_response['items']:
+                metadata = create_video_metadata(item)
+                print('Video {}'.format(count))
+                pprint.pprint(metadata)
+                print('\n')
+                records[count] = metadata
+                count = count + 1
+
+            nextPageToken = response_videos_channels.get('nextPageToken')
+            pages = pages + 1
+            if not nextPageToken or pages == 2:
+                # if not nextPageToken:
+                break;
+
+    except:
+        print("Error on getting channels activity ")
+        print(sys.exc_info()[0])
+        traceback.print_exc()
+
+    # Export info to excel
+    export_dict_to_excel(records, 'queries_videos.xlsx')
 
 
 
@@ -701,12 +1030,18 @@ if __name__ == "__main__":
     #channel_ids = ["UCfz0X0J88di_4xIQHf-BI1Q"]
     #get_channels_metadata(youtube, channel_ids)
 
+    #Add exception inside the video loops of playlist>?
+
+    #records = get_comments_for_video(youtube, "DLWOTc6F4sQ", records=None)
+    # Export info to excel
+    #export_dict_to_excel(records, 'comments_DLWOTc6F4sQ.xlsx')
+
     if youtube:
         if playlist:
-            #get_playlist_metadata(youtube, playlist)
-            get_playlist_comments(youtube, playlist)
-        else:
-            print ("Verify format of YouTube playlist.")
+            get_playlist_metadata(youtube, playlist)
+    #        get_playlist_comments(youtube, playlist)
+    #    else:
+    #        print ("Verify format of YouTube playlist.")
     else:
         print ("Error when creating service")
 
