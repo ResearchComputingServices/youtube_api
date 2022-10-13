@@ -4,3 +4,4 @@ openpyxl
 zulu
 youtube-transcript-api
 werkzeug
+google_auth_oauthlib
