@@ -1,0 +1,6 @@
+google-api-python-client
+pandas
+openpyxl
+zulu
+youtube-transcript-api
+werkzeug
