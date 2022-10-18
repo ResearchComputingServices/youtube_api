@@ -12,3 +12,6 @@ requirements.txt
 /transcripts
 /transcripts*
 /versions
+
+.ipynb_checkpoints/
+__pycache__/
