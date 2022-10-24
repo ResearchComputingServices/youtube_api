@@ -4,6 +4,22 @@ from dateutil import parser
 import os
 import pathlib
 from werkzeug.utils import secure_filename
+from datetime import datetime
+
+
+def get_filename(name, extension):
+    scrap_date = get_today_datetime()
+    filename = name + '_' + scrap_date + '.' + extension
+    return filename
+
+def get_today_datetime():
+
+    now = datetime.now()
+    #dt_string = now.strftime("%d_%m_%Y_%H_%M")
+    dt_string = now.strftime("%d_%m_%Y")
+    return dt_string
+
+
 
 
 def get_api_key():
@@ -65,4 +81,8 @@ def export_dict_to_csv(records, directory, name):
 
     df = pd.DataFrame(records).T
     df.to_csv(filename_path)
+
+
+
+
 

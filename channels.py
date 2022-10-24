@@ -33,7 +33,6 @@ def get_channel_activity(youtube, channel_id):
     return record
 
 
-
 def create_channel_dict(youtube, item):
     try:
         record ={}
@@ -57,39 +56,6 @@ def create_channel_dict(youtube, item):
             print(sys.exc_info()[0])
             traceback.print_exc()
     return record
-
-
-
-def get_channels_metadata_pr(youtube, channel_ids):
-    try:
-
-        records = {}
-        count = 1
-        # Request all videos
-        channels_request = youtube.channels().list(
-            part="contentDetails,id,snippet,statistics,status,topicDetails",
-            id=','.join(channel_ids),
-            maxResults=50
-        )
-
-        channels_response = channels_request.execute()
-
-        for item in channels_response["items"]:
-            record = create_channel_dict(youtube, item)
-            records[count] =record
-            count = count +1
-            # pprint.pprint(item)
-
-
-    except:
-        print("Error on getting channel metadata for channels ")
-        print(sys.exc_info()[0])
-        traceback.print_exc()
-
-    # Export info to excel
-    #export_dict_to_excel(records, 'channels_metadata.xlsx')
-    export_dict_to_excel(records, 'output', 'channels_metadata.xlsx')
-
 
 
 def get_channel_videos_snippet(youtube, channel_id):
@@ -137,7 +103,7 @@ def get_channel_videos_snippet(youtube, channel_id):
 
 
 
-def get_channel_videos_metadata(youtube, channel_id):
+def get_all_videos_by_a_channel_metadata(youtube, channel_id):
 
     records = {}
     nextPageToken = None
@@ -194,6 +160,9 @@ def get_channel_videos_metadata(youtube, channel_id):
     #export_dict_to_excel(records, 'channels_videos.xlsx')
     export_dict_to_excel(records, 'output', 'channel_' + channel_id + '_videos_metadata.xlsx')
     print('Output is in ' + 'channel_' + channel_id + '_videos_metadata.xlsx')
+    return records
+
+
 
 def get_channels_metadata(youtube, channel_ids, export):
 
@@ -216,7 +185,6 @@ def get_channels_metadata(youtube, channel_ids, export):
 
             for item in channels_response["items"]:
                 record = create_channel_dict(youtube, item)
-                pprint.pprint(record)
                 records[item["id"]] =record
                 count = count +1
 

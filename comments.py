@@ -64,14 +64,10 @@ def create_comment_dict(youtube, records, item, commentsCount, comment_number):
 
             if "replies" in item:
 
-                if len(item["replies"])<int(totalReplies):
-                    #Get all replies
-                    print ("Getting all replies")
+                if len(item["replies"]["comments"])<int(totalReplies):
                     replies = get_comments_replies(youtube, item["id"])
                 else:
                     replies = item["replies"]["comments"]
-
-                print ("Total replies: " + str(len(replies)))
 
                 for reply in replies:
                     comment_number = comment_number + 1
@@ -168,7 +164,6 @@ def get_video_comments(youtube, video_id, records=None):
 
             for item in responseCommentsList['items']:
                 count = count + 1
-                print('Comment {}'.format(count))
                 before = len(records)
                 records = create_comment_dict(youtube, records, item, commentsCount, count)
                 replies = len(records) - before - 1
@@ -210,7 +205,7 @@ def create_comment_and_channel_dict(youtube, records, item, commentsCount, comme
     if "snippet" in item:
         try:
             metadata["id"] = item["id"]
-            metadata["type"] = "Comment to video"
+            metadata["type"] = "Comment"
             metadata["Recipient (video or comment)"] = item["snippet"].get("videoId","")
             url = "https://youtu.be/" + item["snippet"].get("videoId","")
             metadata["video url"] = url
@@ -232,21 +227,17 @@ def create_comment_and_channel_dict(youtube, records, item, commentsCount, comme
 
             if "replies" in item:
 
-                if len(item["replies"])<int(totalReplies):
-                    #Get all replies
-                    print ("Getting all replies")
+                if len(item["replies"]["comments"])<int(totalReplies):
                     replies = get_comments_replies(youtube, item["id"])
                 else:
                     replies = item["replies"]["comments"]
-
-                print ("Total replies: " + str(len(replies)))
 
                 for reply in replies:
                     comment_number = comment_number + 1
                     metadata = {}
                     count = count + 1
                     metadata["id"] = reply["id"]
-                    metadata["type"] = "Reply to comment"
+                    metadata["type"] = "Reply"
                     metadata["Recipient (video or comment)"] = reply["snippet"].get("parentId", "")
                     metadata["comment"] = reply["snippet"].get("textDisplay", "")
                     commenter_channel_id = reply["snippet"]["authorChannelId"].get("value", "")
@@ -306,7 +297,6 @@ def get_video_comments_and_channels(youtube, video_id, records=None, channelId_c
 
             for item in responseCommentsList['items']:
                 count = count + 1
-                print('Comment {}'.format(count))
                 before = len(records)
                 records, channelId_commenters = create_comment_and_channel_dict(youtube, records, item, commentsCount, count, channelId_commenters)
                 replies = len(records) - before - 1
