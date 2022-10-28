@@ -2,6 +2,7 @@ import pprint
 import traceback
 import sys
 from utils import export_dict_to_excel
+from utils import get_filename
 from videos import create_video_snippet
 from videos import create_video_metadata
 
@@ -157,9 +158,9 @@ def get_all_videos_by_a_channel_metadata(youtube, channel_id):
         traceback.print_exc()
 
     #Export info to excel
-    #export_dict_to_excel(records, 'channels_videos.xlsx')
-    export_dict_to_excel(records, 'output', 'channel_' + channel_id + '_videos_metadata.xlsx')
-    print('Output is in ' + 'channel_' + channel_id + '_videos_metadata.xlsx')
+    filename = get_filename('channel_' + channel_id + '_videos', 'xlsx')
+    export_dict_to_excel(records, 'output', filename)
+    print("Output is in " + filename)
     return records
 
 
@@ -201,8 +202,8 @@ def get_channels_metadata(youtube, channel_ids, export):
 
     if export==True:
         # Export info to excel
-        #export_dict_to_excel(records, 'channels_metadata.xlsx')
-        export_dict_to_excel(records, 'output', 'channels_metadata.xlsx')
-        print ("Output is in channels_metadata.xlsx")
+        filename = get_filename('channels_metadata','xlsx')
+        export_dict_to_excel(records, 'output', filename)
+        print ("Output is in " + filename)
 
     return records

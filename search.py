@@ -4,6 +4,7 @@ import sys
 from videos import create_video_metadata
 from videos import create_video_snippet
 from utils import export_dict_to_excel
+from utils import get_filename
 
 
 def get_videos_by_keyword_snippet(youtube, query):
@@ -88,9 +89,7 @@ def get_videos_by_keyword_metadata(youtube, query):
 
             for item in videos_response['items']:
                 metadata = create_video_metadata(item)
-                print('Video {}'.format(count))
-                pprint.pprint(metadata)
-                print('\n')
+                print('{} - Video {}'.format(count, item["id"]))
                 records[count] = metadata
                 count = count + 1
 
@@ -107,8 +106,9 @@ def get_videos_by_keyword_metadata(youtube, query):
 
     # Export info to excel
     #export_dict_to_excel(records, 'queries_videos.xlsx')
-    export_dict_to_excel(records, 'output', 'videos_query_metadata.xlsx')
-    print ("Output is in videos_query_metadata.xlsx")
+    filename = get_filename('videos_query_metadata','xlsx')
+    export_dict_to_excel(records, 'output', filename)
+    print ("Output is in: " + filename)
 
 
 

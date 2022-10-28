@@ -9,7 +9,7 @@ from videos import create_video_metadata
 from videos import create_video_and_channel_metadata
 from channels import get_channels_metadata
 from comments import get_video_comments_and_channels
-from network import export_channels_videos_for_network
+from network import export_network_file
 from network import export_comments_videos_for_network
 import pandas as pd
 
@@ -52,7 +52,7 @@ def get_videos_ids_in_playlist(youtube, playlist):
             print(sys.exc_info()[0])
             traceback.print_exc()
 
-    return videos_ids
+    return list(set(videos_ids))
 
 
 def get_playlist_videos_comments(youtube, playlist):
@@ -169,8 +169,8 @@ def get_playlist_video_and_channels_metadata(youtube, playlist):
     filename = get_filename('playlist_videos_channels', 'xlsx')
     export_dict_to_excel(records, directory, filename)
     print ("Output: " + filename)
-    export_channels_videos_for_network(records)
-
+    #export_channels_videos_for_network(records)
+    return records
 
 
 def get_playlist_comments_and_channels_metadata(youtube, playlist):
@@ -227,6 +227,12 @@ def get_playlist_comments_and_channels_metadata(youtube, playlist):
     print ("\nOutput: "  +filename)
 
     export_comments_videos_for_network(records)
+    return records
 
 
+def get_network_for_playlist(youtube,playlist):
+    videos_records = get_playlist_video_and_channels_metadata(youtube, playlist)
+    comments_records = get_playlist_comments_and_channels_metadata(youtube, playlist)
+    output_file = export_network_file(videos_records,comments_records)
 
+    print("Output is in :" + output_file)

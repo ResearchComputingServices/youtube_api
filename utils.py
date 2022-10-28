@@ -82,6 +82,14 @@ def export_dict_to_csv(records, directory, name):
     df = pd.DataFrame(records).T
     df.to_csv(filename_path)
 
+def export_dataframe_to_excel(records, directory, name):
+    abs_path = pathlib.Path().resolve()
+    full_path = os.path.join(abs_path, directory)
+    filename = secure_filename(name)
+    filename_path = os.path.join(full_path, filename)
+
+    df = records.T
+    df.to_excel(filename_path)
 
 
 
