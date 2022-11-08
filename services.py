@@ -6,7 +6,11 @@ from utils import *
 
 
 
-
+#*****************************************************************************************************
+#Builds a service for the YouTube Data API using oauth credentials
+#With oauth credentials other request in addition to retrieving information (like updates or inserts)
+#in a user autorized youtube channels can be executed
+#*****************************************************************************************************
 def build_service_oauth():
 
     credentials = None
@@ -28,6 +32,7 @@ def build_service_oauth():
                     print ("Please run the app again.")
                 else:
                     print ("Unexpected error when attempting to login")
+                return
 
         else:
             print('Fetching New Tokens...')
@@ -53,7 +58,10 @@ def build_service_oauth():
     return youtube
 
 
-
+#*****************************************************************************************************
+#Builds a service for the YouTube Data API using an API Key
+#This is the simplest form of authentication and it is available only to retrieve public information
+#*****************************************************************************************************
 def build_service_api_key():
     api_key = get_api_key()
 
