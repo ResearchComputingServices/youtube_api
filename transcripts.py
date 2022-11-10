@@ -6,7 +6,9 @@ from youtube_transcript_api import YouTubeTranscriptApi
 from werkzeug.utils import secure_filename
 
 
-
+#*****************************************************************************************************
+#This functions writes the transcript of a video to a file
+#*****************************************************************************************************
 def write_transcript_to_file(transcript,video_title,video_id):
     try:
 
@@ -36,7 +38,13 @@ def write_transcript_to_file(transcript,video_title,video_id):
 
 
 
-
+#*****************************************************************************************************
+#This function retrieves the transcript for a videoId given as a parameter.
+#Note that this function does not use YouTubeData API to retrieve the transcript but a
+#different package named YouTubeTranscriptApi
+#Trying to use the YouTubeData API Captions options returns 403 (unauthorized user)
+#Even with Oauth credentials and proper scopes
+#*****************************************************************************************************
 def get_video_transcript(videoId):
 
     transcript_data={}
