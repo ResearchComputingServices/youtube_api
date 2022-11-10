@@ -88,8 +88,8 @@ if __name__ == "__main__":
 
         if option == "6":
             query = get_query()
-            #search_videos_youtube(youtube, query, maxNumberVideos=5)
-            search_videos_youtube(youtube, query, maxNumberVideos=None, network=None)
+            search_videos_youtube(youtube, query, maxNumberVideos=10)
+            #search_videos_youtube(youtube, query, maxNumberVideos=None, network=None)
 
         if option == "7":
             query = get_query()

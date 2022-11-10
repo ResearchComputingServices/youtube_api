@@ -261,6 +261,7 @@ def get_video_comments(youtube, video_id, records=None):
 def create_comment_and_commenter_dict(youtube, records, item, commentsCount, comment_number, channelId_commenters):
 
     count = len(records)+1
+    print ("Comment " + str(count))
     metadata={
         "id": "",
         "type":"",
@@ -362,6 +363,7 @@ def create_comment_and_commenter_dict(youtube, records, item, commentsCount, com
 def get_single_video_comments_and_commenters(youtube, video_id, records=None, channelId_commenters=None):
 
     commentsCount = get_comments_count(youtube,video_id)
+    print ("Comments count: " + commentsCount)
 
     if not records:
         records ={}
@@ -424,7 +426,7 @@ def get_videos_comments_and_commenters(youtube, videos_ids, prefix_name):
         if len(records)==0 or len(channelId_commenters)==0:
             return records
 
-
+        print ("Getting channels info")
         #Get commenter's channels metadata
         #We request at most 50 channels at the time to avoid breaking the API
         channelId_commenters = list(set(channelId_commenters))

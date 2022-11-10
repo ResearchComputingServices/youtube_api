@@ -14,7 +14,7 @@ from datetime import datetime
 def read_excel_file_to_data_frame(filename, columns=None):
     # Load file
     df = None
-    sucess = False
+    success = False
     try:
         if filename:
             # filename = os.path.join(directory, filename)

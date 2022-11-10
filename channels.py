@@ -59,8 +59,8 @@ def create_channel_dict(youtube, item):
             record["channel_subscriberCount"] = item["statistics"].get("subscriberCount","NA")
             record["channel_videoCount"] = item["statistics"].get("videoCount","NA")
 
-        last_activity_date = get_channel_activity(youtube, item["id"])
-        record.update(last_activity_date)
+        #last_activity_date = get_channel_activity(youtube, item["id"])
+        #record.update(last_activity_date)
     except:
             print("Error on creating channel dictionary ")
             print(sys.exc_info()[0])
@@ -214,7 +214,7 @@ def get_all_videos_by_a_channel(youtube, channel_id):
                 break;
 
     except:
-        print("Error on getting channels activity ")
+        print("Error on getting all videos by a channel ")
         print(sys.exc_info()[0])
         traceback.print_exc()
 
