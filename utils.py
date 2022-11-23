@@ -5,6 +5,8 @@ import os
 import pathlib
 from werkzeug.utils import secure_filename
 from datetime import datetime
+import sys
+import traceback
 
 #*****************************************************************************************************
 #Read a excel file given as a parameter and if specific columns are provided those are extracted from
@@ -36,6 +38,30 @@ def read_excel_file_to_data_frame(filename, columns=None):
 
     return df, success
 
+#*****************************************************************************************************
+#Read a excel file given as a parameter and if specific columns are provided those are extracted from
+#the file.
+#The file is returned as a dictionary
+#*****************************************************************************************************
+def read_excel_file_to_dict_old(filename, columns=None):
+    dict=None
+    df, success = read_excel_file_to_data_frame(filename, columns=None)
+    if success:
+        dict = df.T.to_dict()
+    return dict
+
+
+#*****************************************************************************************************
+def read_excel_file_to_dict(filename, index=None):
+    dict=None
+    df, success = read_excel_file_to_data_frame(filename)
+    if success:
+        if index:
+            dict = df.set_index(index).T.to_dict()
+        else:
+            dict = df.T.to_dict()
+    return dict
+
 
 #*****************************************************************************************************
 #This functions creates a filename with the following format
@@ -43,7 +69,8 @@ def read_excel_file_to_data_frame(filename, columns=None):
 #*****************************************************************************************************
 def get_filename(name, extension):
     scrap_date = get_today_datetime()
-    filename = name + '_' + scrap_date + '.' + extension
+    #filename = name + '_' + scrap_date + '.' + extension
+    filename = scrap_date + '_' + name + '.' + extension
     return filename
 
 
@@ -53,7 +80,8 @@ def get_filename(name, extension):
 def get_today_datetime():
     now = datetime.now()
     #dt_string = now.strftime("%d_%m_%Y_%H_%M")
-    dt_string = now.strftime("%d_%m_%Y")
+    #dt_string = now.strftime("%d_%m_%Y")
+    dt_string = now.strftime("%Y_%m_%d")
     return dt_string
 
 #*****************************************************************************************************
@@ -96,6 +124,7 @@ def get_query():
 
 #*****************************************************************************************************
 #This functions converts a UTC date to the local zone
+#Returns date as a string
 #*****************************************************************************************************
 def convert_to_local_zone(datestring):
     try:
@@ -105,6 +134,19 @@ def convert_to_local_zone(datestring):
         return date_time
     except:
         return datestring
+
+
+#*****************************************************************************************************
+#This functions converts a UTC date to the local zone
+#Returns date as a date time object
+#*****************************************************************************************************
+def convert_to_local_zone_dt(datestring):
+    try:
+        utc_dt = parser.parse(datestring)
+        local_dt = utc_dt.astimezone(None)
+        return local_dt
+    except:
+        return None
 
 #*****************************************************************************************************
 #This functions exports a dictionary to a excel file with filename given as a parameter
@@ -144,6 +186,31 @@ def export_dataframe_to_excel(records, directory, name):
 
     df = records.T
     df.to_excel(filename_path)
+
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+#This function retrieves a list of ids from a file
+#-----------------------------------------------------------------------------------------------------------------------
+def get_ids_from_file(filename, id_column):
+    try:
+        ids = None
+        #Load file
+        df, success = read_excel_file_to_data_frame(filename,[id_column])
+        if success:
+            #Convert to list
+            dfT = df.T
+            idsl = dfT.values.tolist()
+            #ids = list(set(idsl[0]))
+            ids = idsl[0]
+    except:
+        print("Error on get_ids_from_file. Verify input file and header id")
+        print(sys.exc_info()[0])
+        traceback.print_exc()
+
+    return ids
+
+
 
 
 

@@ -44,20 +44,20 @@ def create_video_metadata(item):
 
         metadata = {
             "videoId": videoId,
-            "title": title,
-            "url": url,
-            "publishedAt": publishedDate,
-            "scrappedAt": current_datetime_str,
-            "duration": duration,
-            "views":  views,
-            "likes": likes,
-            "favoriteCount":  favoriteCount,
-            "commentsCount": commentsCount,
-            "description":  description,
-            "channelId":  channelId,
-            "Transcript Language": transcript_dict["language"],
-            "Transcript Type" : transcript_dict["tr_type"],
-            "Downloaded Transcript" : transcript_filename
+            "video_title": title,
+            "video_url": url,
+            "video_publishedAt": publishedDate,
+            "video_scrappedAt": current_datetime_str,
+            "video_duration": duration,
+            "video_views":  views,
+            "video_likes": likes,
+            "video_favoriteCount":  favoriteCount,
+            "video_commentsCount": commentsCount,
+            "video_description":  description,
+            "video_channelId":  channelId,
+            "video_Transcript Language": transcript_dict["language"],
+            "video_Transcript Type" : transcript_dict["tr_type"],
+            "video_Downloaded Transcript" : transcript_filename
         }
     except:
         print("Error on creating dict: \n")
@@ -67,20 +67,20 @@ def create_video_metadata(item):
         traceback.print_exc()
         metadata = {
             "videoId": "",
-            "title": "",
-            "url": "",
-            "publishedAt": "",
-            "scrappedAt": "",
-            "duration": "",
-            "views": "",
-            "likes": "",
-            "favoriteCount": "",
-            "commentsCount": "",
-            "description": "",
-            "channelId": "",
-            "Transcript Language": "",
-            "Transcript Type": "",
-            "Downloaded Transcript": ""
+            "video_title": "",
+            "video_url": "",
+            "video_publishedAt": "",
+            "video_scrappedAt": "",
+            "video_duration": "",
+            "video_views": "",
+            "video_likes": "",
+            "video_favoriteCount": "",
+            "video_commentsCount": "",
+            "video_description": "",
+            "video_channelId": "",
+            "video_Transcript Language": "",
+            "video_Transcript Type": "",
+            "video_Downloaded Transcript": ""
         }
 
     return metadata
@@ -111,6 +111,11 @@ def get_video_metadata(youtube, video_id):
     #Export info to excel
     filename = export_dict_to_excel(records, 'output', 'video_'+video_id + '_metadata.xlsx')
     print ("Output is in: " + filename)
+
+
+
+
+
 
 
 
