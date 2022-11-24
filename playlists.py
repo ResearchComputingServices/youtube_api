@@ -90,7 +90,7 @@ def get_playlist_videos_and_videocreators(youtube, playlist, playlist_title, vid
     try:
         if not videos_ids:
             videos_ids = get_playlist_videos_ids(youtube, playlist)
-        prefix_name = "playliyst_" + playlist_title + "_videos_creators"
+        prefix_name = "playlist_" + playlist_title + "_videos_creators"
         records = get_videos_and_videocreators(youtube, videos_ids, prefix_name)
     except:
         print("Error on getting video's metadata and creators for playlist ")
@@ -191,7 +191,8 @@ def get_playlist_metadata(youtube, playlist, playlist_title):
         for item in videos_response['items']:
             metadata = create_video_metadata(item)
             print('{} - Video {}'.format(count, metadata["videoId"]))
-            records[count] = metadata
+            #records[count] = metadata
+            records[metadata["videoId"]] = metadata
             count = count + 1
 
         # if not nextPageToken or pages == 1:

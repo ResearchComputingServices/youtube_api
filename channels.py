@@ -6,6 +6,7 @@ from utils import export_dict_to_excel
 from utils import get_filename
 from utils import read_excel_file_to_data_frame
 from utils import convert_to_local_zone
+from utils import get_ids_from_file
 from videos import create_video_metadata
 from videos import get_video_transcript
 from videos import write_transcript_to_file
@@ -201,9 +202,8 @@ def get_all_videos_by_a_channel(youtube, channel_id):
 
             for item in videos_response['items']:
                 metadata = create_video_metadata(item)
-                print('Video {}'.format(count))
+                print('Channel {} - Video {} {}'.format(channel_id,item["id"],count))
                 #pprint.pprint(metadata)
-                print('\n')
                 records[count] = metadata
                 count = count + 1
 
@@ -218,10 +218,6 @@ def get_all_videos_by_a_channel(youtube, channel_id):
         print(sys.exc_info()[0])
         traceback.print_exc()
 
-    #Export info to excel
-    filename = get_filename('channel_' + channel_id + '_videos', 'xlsx')
-    export_dict_to_excel(records, 'output', filename)
-    print("Output is in " + filename)
     return records
 
 
@@ -310,7 +306,8 @@ def get_videos_and_videocreators(youtube, videos_ids, prefix_name):
         for item in videos_response['items']:
             metadata = create_video_and_creator_dict(item, channel_records)
             print('{} - Video {}'.format(count, metadata["videoId"]))
-            records[count] = metadata
+            #records[count] = metadata
+            records[metadata["videoId"]]=metadata
             count = count + 1
 
         start = end
@@ -323,34 +320,155 @@ def get_videos_and_videocreators(youtube, videos_ids, prefix_name):
     # export_channels_videos_for_network(records)
     return records
 
+
+
 #*****************************************************************************************************
 #This function extracts a list of videos ids from an excel file (The excel file must contain the column
-# videoId with the videos' ids)
+#videoId with the videos' ids)
 #Once extracted this list, the function then calls the function get_videos_and_videocreators to retrieve
 #the videos and its creators' metadata.
 #*****************************************************************************************************
-
 def get_videos_and_videocreators_from_file(youtube, filename, prefix):
     try:
         #Load file
-        df, success = read_excel_file_to_data_frame(filename,['videoId'])
-        if success:
-            #Convert to list
-            dfT = df.T
-            videos_ids = dfT.values.tolist()
+        videos_ids = get_ids_from_file(filename, "videoId")
+        if videos_ids:
             prefix_name = "file_"+ prefix + "_videos_creators"
             #Get data from YouTube API
-            get_videos_and_videocreators(youtube, videos_ids[0], prefix_name)
+            get_videos_and_videocreators(youtube, videos_ids, prefix_name)
+        else:
+            print ("Video's ids couldn't be retrieved. Check input file.")
     except:
-        print("Error on get_videos_comments_and_commenters_from_file")
+        print("Error on get_videos_and_videocreators_from_file")
         print(sys.exc_info()[0])
         traceback.print_exc()
 
 
+#get_ids_from_file(filename, id_column)
 
 
 
 
 
+#***********************************************************************************************************************
+#Get last activity for a list of channels
+#***********************************************************************************************************************
+def get_channels_activity_from_file(youtube, filename, prefix):
+    try:
+        #Load file
+        records={}
+        channels_ids = get_ids_from_file(filename, "channelId")
+        if channels_ids:
+            #Get data from YouTube API
+            for id in channels_ids:
+                records[id]=get_channel_activity(youtube, id)
+
+            # Export info to excel
+            directory = 'output'
+            filename = get_filename(prefix + "_channels_activity_", 'xlsx')
+            filename = export_dict_to_excel(records, directory, filename)
+            print("Output: " + filename)
+        else:
+            print ("Channel's ids couldn't be retrieved. Check input file.")
+    except:
+        print("Error on get_channels_activity_from_file")
+        print(sys.exc_info()[0])
+        traceback.print_exc()
+
+    return
 
 
+#***********************************************************************************************************************
+#Get all videos for all the channels ids in a file
+#***********************************************************************************************************************
+def get_all_videos_by_all_channels_from_file(youtube, filename, prefix):
+    #Load file
+    try:
+        records={}
+        count=0
+        channels_ids = get_ids_from_file(filename, "channelId")
+        if channels_ids:
+            #Get data from YouTube API
+            for id in channels_ids:
+                videos =get_all_videos_by_a_channel(youtube, id)
+                for video in videos.items():
+                    video[1]["channelId"] = id
+                    records[count] = video[1]
+                    count = count + 1
+
+            # Export info to excel
+            directory = 'output'
+            filename = get_filename(prefix + "_all_videos_by_channels", 'xlsx')
+            filename = export_dict_to_excel(records, directory, filename)
+            print("Output: " + filename)
+        else:
+            print ("Channel's ids couldn't be retrieved. Check input file.")
+    except:
+        print("Error on get_channels_activity_from_file")
+        print(sys.exc_info()[0])
+        traceback.print_exc()
+
+    return
+
+
+
+#***********************************************************************************************************************
+#Get all videos for all the channels ids in a file
+#***********************************************************************************************************************
+def get_all_videos_by_all_channels_from_file(youtube, filename, prefix):
+    #Load file
+    try:
+        records={}
+        count=0
+        channels_ids = get_ids_from_file(filename, "channelId")
+        if channels_ids:
+            #Get data from YouTube API
+            for id in channels_ids:
+                videos =get_all_videos_by_a_channel(youtube, id)
+                for video in videos.items():
+                    video[1]["channelId"] = id
+                    records[count] = video[1]
+                    count = count + 1
+
+            # Export info to excel
+            directory = 'output'
+            filename = get_filename(prefix + "_all_videos_by_channels", 'xlsx')
+            filename = export_dict_to_excel(records, directory, filename)
+            print("Output: " + filename)
+        else:
+            print ("Channel's ids couldn't be retrieved. Check input file.")
+    except:
+        print("Error on get_channels_activity_from_file")
+        print(sys.exc_info()[0])
+        traceback.print_exc()
+
+    return
+
+
+#***********************************************************************************************************************
+#Get all videos for all the channels ids in a file
+#***********************************************************************************************************************
+def get_metadata_channels_from_file(youtube, filename, prefix):
+    #Load file
+    try:
+        records={}
+        channels_ids = get_ids_from_file(filename, "channelId")
+        if channels_ids:
+            #Get data from YouTube API
+            for id in channels_ids:
+                metadata = get_channels_metadata(youtube,[id],False)
+                records[id] = metadata[id]
+
+            # Export info to excel
+            directory = 'output'
+            filename = get_filename(prefix + "_channels_metadata", 'xlsx')
+            filename = export_dict_to_excel(records, directory, filename)
+            print("Output: " + filename)
+        else:
+            print ("Channel's ids couldn't be retrieved. Check input file.")
+    except:
+        print("Error on get_channels_activity_from_file")
+        print(sys.exc_info()[0])
+        traceback.print_exc()
+
+    return

@@ -5,10 +5,11 @@ import os
 import pathlib
 import pandas as pd
 import emoji
+import datetime
 from utils import get_filename
 from utils import export_dict_to_excel
 from utils import export_dict_to_csv
-from utils import read_excel_file_to_data_frame
+from utils import get_ids_from_file
 from channels import get_channels_metadata
 
 
@@ -109,6 +110,9 @@ def get_comment_replies(youtube, parent_id):
 #*****************************************************************************************************
 def create_comment_dict(youtube, records, item, commentsCount, comment_number):
 
+    now = datetime.datetime.now()
+    current_datetime_str = now.strftime("%Y-%m-%d, %H:%M:%S")
+
     count = len(records)+1
     metadata={
         "id": "",
@@ -118,6 +122,7 @@ def create_comment_dict(youtube, records, item, commentsCount, comment_number):
         "comment":"",
         "likeCount": "",
         "publishedAt": "",
+        "scrappedAt" : "",
         "totalReplyCount": "",
         "authorDisplayName": "",
         "authorProfileImageUrl": "",
@@ -145,6 +150,7 @@ def create_comment_dict(youtube, records, item, commentsCount, comment_number):
             metadata["authorChannelUrl"] = item["snippet"]["topLevelComment"]["snippet"].get("authorChannelUrl","")
             metadata["likeCount"] = item["snippet"]["topLevelComment"]["snippet"].get("likeCount", "")
             metadata["publishedAt"] = item["snippet"]["topLevelComment"]["snippet"].get("publishedAt", "")
+            metadata["scrappedAt"] = current_datetime_str
             totalReplies = item["snippet"].get("totalReplyCount", "0")
             metadata["totalReplyCount"] = totalReplies
             records[count] = metadata
@@ -178,6 +184,7 @@ def create_comment_dict(youtube, records, item, commentsCount, comment_number):
                     metadata["authorProfileImageUrl"] = reply["snippet"].get("authorProfileImageUrl", "")
                     metadata["likeCount"] = reply["snippet"].get("likeCount", "")
                     metadata["publishedAt"] = reply["snippet"].get("publishedAt", "")
+                    metadata["scrappedAt"] = current_datetime_str
                     metadata["totalReplyCount"] = "N/A"
                     metadata["video url"]= ""
                     metadata["totalComments"] = commentsCount
@@ -260,6 +267,9 @@ def get_video_comments(youtube, video_id, records=None):
 #*****************************************************************************************************
 def create_comment_and_commenter_dict(youtube, records, item, commentsCount, comment_number, channelId_commenters):
 
+    now = datetime.datetime.now()
+    current_datetime_str = now.strftime("%Y-%m-%d, %H:%M:%S")
+
     count = len(records)+1
     print ("Comment " + str(count))
     metadata={
@@ -270,6 +280,7 @@ def create_comment_and_commenter_dict(youtube, records, item, commentsCount, com
         "comment":"",
         "likeCount": "",
         "publishedAt": "",
+        "scrappedAt": "",
         "totalReplyCount": "",
         "authorDisplayName": "",
         "authorProfileImageUrl": "",
@@ -299,6 +310,7 @@ def create_comment_and_commenter_dict(youtube, records, item, commentsCount, com
             metadata["authorChannelUrl"] = item["snippet"]["topLevelComment"]["snippet"].get("authorChannelUrl","")
             metadata["likeCount"] = item["snippet"]["topLevelComment"]["snippet"].get("likeCount", "")
             metadata["publishedAt"] = item["snippet"]["topLevelComment"]["snippet"].get("publishedAt", "")
+            metadata["scrappedAt"] = current_datetime_str
             totalReplies = item["snippet"].get("totalReplyCount", "0")
             metadata["totalReplyCount"] = totalReplies
             records[count] = metadata
@@ -334,6 +346,7 @@ def create_comment_and_commenter_dict(youtube, records, item, commentsCount, com
                     metadata["authorProfileImageUrl"] = reply["snippet"].get("authorProfileImageUrl", "")
                     metadata["likeCount"] = reply["snippet"].get("likeCount", "")
                     metadata["publishedAt"] = reply["snippet"].get("publishedAt", "")
+                    metadata["scrappedAt"] = current_datetime_str
                     metadata["totalReplyCount"] = "N/A"
                     metadata["video url"]= ""
                     metadata["totalComments"] = commentsCount
@@ -481,14 +494,11 @@ def get_videos_comments_and_commenters(youtube, videos_ids, prefix_name):
 def get_videos_comments_and_commenters_from_file(youtube,filename, prefix):
     try:
         # Load file
-        df, success = read_excel_file_to_data_frame(filename, ['videoId'])
-        if success:
-            # Convert to list
-            dfT = df.T
-            videos_ids = dfT.values.tolist()
+        videos_ids = get_ids_from_file(filename, "videoId")
+        if videos_ids:
             prefix_name = "file_" + prefix + "comments_commenters"
             # Get data from YouTube API
-            get_videos_comments_and_commenters(youtube, videos_ids[0], prefix_name)
+            get_videos_comments_and_commenters(youtube, videos_ids, prefix_name)
             print("\n")
     except:
         print("Error on get_videos_comments_and_commenters_from_file")
