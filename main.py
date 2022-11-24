@@ -52,20 +52,16 @@ if __name__ == "__main__":
         print ("[10]: FILE: Network")
         print("---------------------------------------------------")
         print ("[11]: CHANNEL: Metadata")
-        print ("[12]: CHANNEL: Videos")
-        print ("[13]: CHANNEL: Activity")
+        print ("[12]: CHANNEL: All Videos")
+        print ("[13]: CHANNEL: Latest Activity")
         print("---------------------------------------------------")
-        print ("[14]: VIDEO: Metadata and Creator")
-        print ("[15]: VIDEO: Comments and Commenters")
-        print("---------------------------------------------------")
-        print ("[16] Compare video files")
-        print ("[17] Compare comments files")
+        print ("[14] Compare video's retrieval")
+        print ("[15] Compare comments' retrieval")
         print("---------------------------------------------------")
         print ("[X]: Exit")
 
 
         option = input ("Please introduce your option: ")
-        #option="10"
 
         if not option:
             print('An option should be provided.')
@@ -96,23 +92,29 @@ if __name__ == "__main__":
 
         if option == "6":
             query = get_query()
-            search_videos_youtube(youtube, query, maxNumberVideos=10)
-            #search_videos_youtube(youtube, query, maxNumberVideos=None, network=None)
+            numberVideos_str = input("Enter maximum number of videos to retrieve (optional): ")
+            try:
+                numberVideos = int(numberVideos_str)
+            except:
+                numberVideos = None
+            search_videos_youtube(youtube, query, maxNumberVideos=numberVideos, network=None)
 
         if option == "7":
             query = get_query()
-            #search_videos_youtube(youtube, query, maxNumberVideos =10, network=True)
-            search_videos_youtube(youtube, query, network=True)
+            numberVideos_str = input("Enter maximum number of videos to retrieve (optional): ")
+            try:
+                numberVideos = int(numberVideos_str)
+            except:
+                numberVideos = None
+            search_videos_youtube(youtube, query, maxNumberVideos =numberVideos, network=True)
 
         if option == "8":
             filename = input ("Filename with videos Ids to request videos and creators: ")
-            #filename = "output/test_ids.xlsx"
             prefix =  input ("Type a prefix for the output filename [optional]: ")
             get_videos_and_videocreators_from_file(youtube, filename, prefix)
 
         if option == "9":
             filename = input ("Filename with videos Ids to request comments and commenters: ")
-            #filename = "output/test_ids.xlsx"
             prefix = input("Type a prefix for the output filename [optional]: ")
             get_videos_comments_and_commenters_from_file(youtube, filename, prefix)
 
@@ -126,62 +128,43 @@ if __name__ == "__main__":
 
         if option == "11":
             file = input("Input file with channels ids to retrieve channel's metadata: ")
-            #file = "output/test_ids.xlsx"
             prefix = input("Introduce a prefix name for file: ")
             get_metadata_channels_from_file(youtube, file, prefix)
 
         if option == "12":
             file = input("Input file with channels ids to retrieve all videos: ")
-            #file = "output/test_ids.xlsx"
             prefix = input("Introduce a prefix name for file: ")
             get_all_videos_by_all_channels_from_file(youtube, file, prefix)
 
         if option == "13":
             file = input("Input file with channels ids to retrieve latest channels' activity: ")
-            #file = "output/test_ids.xlsx"
             prefix = input ("Introduce a prefix name for file: ")
             get_channels_activity_from_file(youtube,file,prefix)
 
+        #if option=="14":
+        #    video_id = input ("Introduce video id: ")
+        #    get_video_metadata(youtube, video_id)
+
+
+        #if option=="15":
+        #    video_id = input ("Introduce video id: ")
+        #    records = get_video_comments(youtube, video_id, None)
+        #    filename = export_dict_to_excel(records, 'output', 'video_' + video_id + '_comments.xlsx')
+        #    print ("Output is in: " + 'video_' + video_id + '_comments.xlsx')
+
         if option=="14":
-            video_id = input ("Introduce video id: ")
-            get_video_metadata(youtube, video_id)
-
-
-        if option=="15":
-            video_id = input ("Introduce video id: ")
-            records = get_video_comments(youtube, video_id, None)
-            filename = export_dict_to_excel(records, 'output', 'video_' + video_id + '_comments.xlsx')
-            print ("Output is in: " + 'video_' + video_id + '_comments.xlsx')
-
-        if option=="16":
             file1 = input("1st. File to compare (videos & creators): ")
             file2 = input("2nd. File to compare (videos & creators): ")
-            #file1 = "output/playliyst_Duplicate_Romulus_videos_creators_17_11_2022.xlsx"
-            #file2 = "output/playliyst_Duplicate_Romulus_videos_creators_08_11_2022.xlsx"
             filename = input("Type an infix  for the output filename [optional]: ")
             compare_video_creators_files(file1,file2,filename)
 
-        if option=="17":
+        if option=="15":
             file1 = input("1st. File to compare (comments & commenters): ")
             file2 = input("2nd. File to compare (comments & commenters): ")
-            #file1 = "output/playlist_Duplicate_Romulus_comments_commenters_17_11_2022.xlsx"
-            #file2 = "output/playlist_Duplicate_Romulus_comments_commenters_08_11_2022.xlsx"
             filename = input("Type an infix  for the output filename [optional]: ")
             compare_comments_commenters_files(file1,file2,filename)
 
-
-
-        #option = "x"
-        #if option=="11":
-        #    export_network_file_2()
-
-        #if option=="12":
-        #    demo()
         option = "x"
-
-        #To get channel metadata for a list of channels
-        #channel_ids = ["UCfz0X0J88di_4xIQHf-BI1Q"]
-        #get_channels_metadata(youtube, channel_ids, True)
 
 
 

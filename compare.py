@@ -188,7 +188,7 @@ def compare_video_records(old_item,new_item, status):
             "status": status,
        }
     except:
-        print("Error on creating dict: \n")
+        print("File incompatiblity. Check input files \n")
         print(sys.exc_info()[0])
         traceback.print_exc()
     return metadata
@@ -235,7 +235,7 @@ def compare_video_creators_files(file1, file2, user_prefix):
     newer_dict, older_dict= get_newer_and_older_dicts(file1, file2, "video_scrappedAt", "videoId")
 
     if not newer_dict or not older_dict:
-        print ("There was an error processing the input files.")
+        print ("There was an error processing the input files. Verify the files correspond to videos' retrieval. ")
         return
 
     for new_key, new_item in newer_dict.items():
@@ -268,7 +268,7 @@ def compare_comments_commenters_files(file1, file2, user_prefix):
     newer_dict, older_dict = get_newer_and_older_dicts(file1, file2, "scrappedAt", "id")
 
     if not newer_dict or not older_dict:
-        print ("There was an error processing the input files.")
+        print ("There was an error processing the input files. Verify the files correspond to comment's retrieval.")
         return
 
     print ("Comparing new comments  vs old comments...")
