@@ -172,7 +172,7 @@ if __name__ == "__main__":
             filename = input("Type an infix  for the output filename [optional]: ")
             compare_comments_commenters_files(file1,file2,filename)
 
-        option = "x"
+        input("Press any key to continue")
 
 
 
