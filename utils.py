@@ -88,37 +88,47 @@ def get_today_datetime():
 #Gets the API key from the config file
 #*****************************************************************************************************
 def get_api_key():
-    with open('api_key.json') as client_secrets_file:
-        client_secrets = json.load(client_secrets_file)
-    if client_secrets:
-        return client_secrets["key"]
-    else:
-        return None
+    try:
+        with open('api_key.json') as client_secrets_file:
+            client_secrets = json.load(client_secrets_file)
+        if client_secrets:
+            return client_secrets["key"]
+        else:
+            return None
+    except:
+        print("File api_key.json couldn't be loaded. Please verify this file.")
+    return None
 
 #*****************************************************************************************************
 #Gets the URL link for the playlist
 #*****************************************************************************************************
 def get_url_playlist():
-    with open('config.json') as config_file:
-        config_file = json.load(config_file)
-    if config_file:
-        pl = config_file["playlist"]
-        index = pl.find("list=")
-        if index:
-            playlist = pl[index+5:]
-            return playlist
+    try:
+        with open('config.json') as config_file:
+            config_file = json.load(config_file)
+        if config_file:
+            pl = config_file["playlist"]
+            index = pl.find("list=")
+            if index:
+                playlist = pl[index+5:]
+                return playlist
+    except:
+        print ("File config.json couldn't be loaded. Please verify this file.")
     return None
 
 #*****************************************************************************************************
 #Gets the query to be executed in the API search
 #*****************************************************************************************************
-
 def get_query():
-    with open('config.json') as config_file:
-        config_file = json.load(config_file)
-    if config_file:
-        q = config_file["query"]
-        return q
+    try:
+        with open('config.json') as config_file:
+            config_file = json.load(config_file)
+        if config_file:
+            q = config_file["query"]
+            return q
+        return None
+    except:
+        print("File config.json couldn't be loaded. Please verify this file.")
     return None
 
 

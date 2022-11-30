@@ -10,8 +10,6 @@ from channels import get_all_videos_by_all_channels_from_file
 from channels import get_metadata_channels_from_file
 from channels import get_videos_and_videocreators_from_file
 from channels import get_channels_activity_from_file
-from videos import get_video_metadata
-from comments import get_video_comments
 from comments import get_videos_comments_and_commenters_from_file
 from search import search_videos_youtube
 from network import export_network_file
@@ -31,8 +29,11 @@ if __name__ == "__main__":
         print("Error when creating API Youtube service.")
         sys.exit()
 
-    #Retrieves the title of the playlist
+    # Retrieves the title of the playlist
     playlist = get_url_playlist()
+    if not playlist:
+        sys.exit()
+
     playlist_title = get_playlist_title(youtube, playlist)
 
     while (option.upper()!="X"):
@@ -92,6 +93,9 @@ if __name__ == "__main__":
 
         if option == "6":
             query = get_query()
+            if len(query)==0:
+                print ("Please introduce a query in config.json")
+                sys.exit()
             numberVideos_str = input("Enter maximum number of videos to retrieve (optional): ")
             try:
                 numberVideos = int(numberVideos_str)
@@ -101,6 +105,10 @@ if __name__ == "__main__":
 
         if option == "7":
             query = get_query()
+            if len(query) == 0:
+                print("Please introduce a query in config.json")
+                sys.exit()
+
             numberVideos_str = input("Enter maximum number of videos to retrieve (optional): ")
             try:
                 numberVideos = int(numberVideos_str)

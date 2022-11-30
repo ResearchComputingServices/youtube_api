@@ -64,8 +64,10 @@ def build_service_oauth():
 #*****************************************************************************************************
 def build_service_api_key():
     api_key = get_api_key()
+    youtube = None
 
-    # Builds a service object. In this case, the service is youtube api, version v3, with the api_key
-    youtube = build('youtube', 'v3', developerKey=api_key)
+    if api_key:
+        # Builds a service object. In this case, the service is youtube api, version v3, with the api_key
+        youtube = build('youtube', 'v3', developerKey=api_key)
 
     return youtube
