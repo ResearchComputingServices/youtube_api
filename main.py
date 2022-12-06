@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
         print ("[1]: PLAYLIST: Videos")
         print ("[2]: PLAYLIST: Videos' Comments")
-        print ("[3]: PLAYLIST: Videos and Creators)")
+        print ("[3]: PLAYLIST: Videos and Creators")
         print ("[4]: PLAYLIST: Videos Comments and Commenters")
         print ("[5]: PLAYLIST: Network")
         print ("---------------------------------------------------")
@@ -109,7 +109,7 @@ if __name__ == "__main__":
                 print("Please introduce a query in config.json")
                 sys.exit()
 
-            numberVideos_str = input("Enter maximum number of videos to retrieve (optional): ")
+            numberVideos_str = input("Enter a maximum number of videos to retrieve (optional): ")
             try:
                 numberVideos = int(numberVideos_str)
             except:
@@ -119,35 +119,35 @@ if __name__ == "__main__":
         if option == "8":
             filename = input ("Filename with videos Ids to request videos and creators: ")
             prefix =  input ("Type a prefix for the output filename [optional]: ")
-            get_videos_and_videocreators_from_file(youtube, filename, prefix)
+            get_videos_and_videocreators_from_file(youtube, filename.rstrip(), prefix)
 
         if option == "9":
             filename = input ("Filename with videos Ids to request comments and commenters: ")
             prefix = input("Type a prefix for the output filename [optional]: ")
-            get_videos_comments_and_commenters_from_file(youtube, filename, prefix)
+            get_videos_comments_and_commenters_from_file(youtube, filename.rstrip(), prefix)
 
         if option == "10":
             videosFilename = input ("Filename with videos and creators: ")
             commentsFilename = input ("Filename with comments and commenters: ")
             prefix = input("Type a prefix for the output filename [optional]: ")
-            output_file = export_network_file("from_file_" + prefix , videosFilename=videosFilename,
-                                              commentsFilename=commentsFilename)
+            output_file = export_network_file("from_file_" + prefix , videosFilename=videosFilename.rstrip(),
+                                              commentsFilename=commentsFilename.rstrip())
             print("Output is in :" + output_file)
 
         if option == "11":
             file = input("Input file with channels ids to retrieve channel's metadata: ")
-            prefix = input("Introduce a prefix name for file: ")
-            get_metadata_channels_from_file(youtube, file, prefix)
+            prefix = input("Introduce a prefix name for the file: ")
+            get_metadata_channels_from_file(youtube, file.rstrip(), prefix)
 
         if option == "12":
             file = input("Input file with channels ids to retrieve all videos: ")
-            prefix = input("Introduce a prefix name for file: ")
-            get_all_videos_by_all_channels_from_file(youtube, file, prefix)
+            prefix = input("Introduce a prefix name for the file: ")
+            get_all_videos_by_all_channels_from_file(youtube, file.rstrip(), prefix)
 
         if option == "13":
-            file = input("Input file with channels ids to retrieve latest channels' activity: ")
-            prefix = input ("Introduce a prefix name for file: ")
-            get_channels_activity_from_file(youtube,file,prefix)
+            file = input("Input file with channels ids to retrieve the latest channels' activity: ")
+            prefix = input ("Introduce a prefix name for the file: ")
+            get_channels_activity_from_file(youtube,file.rstrip(),prefix)
 
         #if option=="14":
         #    video_id = input ("Introduce video id: ")
@@ -164,13 +164,13 @@ if __name__ == "__main__":
             file1 = input("1st. File to compare (videos & creators): ")
             file2 = input("2nd. File to compare (videos & creators): ")
             filename = input("Type an infix  for the output filename [optional]: ")
-            compare_video_creators_files(file1,file2,filename)
+            compare_video_creators_files(file1.rstrip(),file2.rstrip(),filename)
 
         if option=="15":
             file1 = input("1st. File to compare (comments & commenters): ")
             file2 = input("2nd. File to compare (comments & commenters): ")
             filename = input("Type an infix  for the output filename [optional]: ")
-            compare_comments_commenters_files(file1,file2,filename)
+            compare_comments_commenters_files(file1.rstrip(),file2.rstrip(),filename)
 
         if option.upper()!="X":
             input("Press any key to continue")
