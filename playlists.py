@@ -21,6 +21,7 @@ import pandas as pd
 #This function returns the title of the playlist given as argument
 #*****************************************************************************************************
 def get_playlist_title(youtube, playlistId):
+    title = None
     request = youtube.playlists().list(
         id = playlistId,
         part='snippet'
