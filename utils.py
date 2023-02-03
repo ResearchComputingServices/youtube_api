@@ -74,6 +74,44 @@ def get_filename(name, extension):
     return filename
 
 
+
+#****************************************************************************************************
+#This function checks if a file exists with a given name.
+#It returns a filename with the highest counter
+#****************************************************************************************************
+def _get_latest_file(directory,prefix, extension='.xlsx'):
+
+    latest_number = -1
+
+    for file in os.listdir(directory):
+        if file.startswith(prefix):
+            name = file
+            only_name = name.split(extension)[0];
+            st = only_name.split('_')
+            last_st = st[len(st)-1]
+            try:
+                number = int(last_st)
+                if number > latest_number:
+                    latest_number = number
+            except:
+                if latest_number < 0:
+                    latest_number = 0
+
+    return (latest_number)
+
+#-----------------------------------------------------------------------------------------------------------------------
+#This function returns a name of a file and a counter if the name already exists
+#-----------------------------------------------------------------------------------------------------------------------
+def get_filename_ordered(directory, name, extension):
+    scrap_date = get_today_datetime()
+    filename = scrap_date + '_' + name + '.' + extension
+    number = _get_latest_file(directory,secure_filename(scrap_date + '_' + name), '.'+extension)
+    if number>=0:
+        filename = scrap_date + '_' + name + '_' + str(number+1) + '.' + extension
+    return secure_filename(filename)
+
+
+
 #*****************************************************************************************************
 #Gets the current date
 #*****************************************************************************************************
@@ -188,7 +226,49 @@ def export_dict_to_excel(records, directory, name):
 #*****************************************************************************************************
 #This functions exports a dictionary to a csv file with filename given as a parameter
 #*****************************************************************************************************
-def export_dict_to_csv(records, directory, name):
+def export_dict_to_csv(records, directory, name, mode='w', index=True, header=True):
+    abs_path = pathlib.Path().resolve()
+    full_path = os.path.join(abs_path, directory)
+    filename = secure_filename(name)
+    filename_path = os.path.join(full_path, filename)
+
+    df = pd.DataFrame(records).T
+    df.to_csv(filename_path, mode=mode, index=index, header=header)
+
+    return filename_path
+
+#*****************************************************************************************************
+#This functions exports a dictionary to a csv file with filename given as a parameter
+#*****************************************************************************************************
+def get_fullpath(directory, name):
+    abs_path = pathlib.Path().resolve()
+    full_path = os.path.join(abs_path, directory)
+    filename = secure_filename(name)
+    filename_path = os.path.join(full_path, filename)
+    return filename_path
+
+
+#*****************************************************************************************************
+#This functions exports a csv file to an excel file
+#*****************************************************************************************************
+def export_csv_to_excel(csv_file, excel_file):
+
+    # reading the csv file
+    csv_dataframe = pd.read_csv(csv_file)
+
+    # creating an output excel file
+    result_excelfile = pd.ExcelWriter(excel_file)
+
+    # converting the csv file to an excel file
+    csv_dataframe.to_excel(result_excelfile, index=False)
+
+    # saving the excel file
+    result_excelfile.save()
+
+#*****************************************************************************************************
+#This functions exports a dictionary to a csv file with filename given as a parameter
+#*****************************************************************************************************
+def export_dict_to_csv_1(records, directory, name):
     abs_path = pathlib.Path().resolve()
     full_path = os.path.join(abs_path, directory)
     filename = secure_filename(name)
@@ -198,6 +278,7 @@ def export_dict_to_csv(records, directory, name):
     df.to_csv(filename_path)
 
     return filename_path
+
 
 #*****************************************************************************************************
 #This functions exports a data fraeme to a excel file with filename given as a parameter
@@ -210,8 +291,21 @@ def export_dataframe_to_excel(records, directory, name):
 
     df = records.T
     df.to_excel(filename_path)
+    return filename_path
 
 
+#*****************************************************************************************************
+#This functions exports a data frame to a excel file with filename given as a parameter
+#Columsn are specified as parameter
+#*****************************************************************************************************
+def export_list_to_excel(lst, directory, name, columns):
+    abs_path = pathlib.Path().resolve()
+    full_path = os.path.join(abs_path, directory)
+    filename = secure_filename(name)
+    filename_path = os.path.join(full_path, filename)
+    df = pd.DataFrame(lst, columns=columns)
+    df.to_excel(filename_path)
+    return filename_path
 
 #-----------------------------------------------------------------------------------------------------------------------
 #This function retrieves a list of ids from a file
@@ -234,8 +328,11 @@ def get_ids_from_file(filename, id_column):
 
     return ids
 
-
-
+#***********************************************************************************************************************
+#***********************************************************************************************************************
+def delete_file(file):
+    if (os.path.isfile(file)):
+        os.remove(file)
 
 
 

@@ -6,6 +6,7 @@ import datetime
 import pprint
 import traceback
 import sys
+import state
 
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -100,6 +101,7 @@ def get_video_metadata(youtube, video_id):
     )
 
     videos_response = videos_request.execute()
+    state.state_yt = state.update_quote_usage(state.state_yt, state.UNITS_VIDEOS_LIST)
 
     for item in videos_response['items']:
         metadata = create_video_metadata(item)

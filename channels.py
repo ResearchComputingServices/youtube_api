@@ -2,6 +2,7 @@ import pprint
 import traceback
 import sys
 import datetime
+import state
 from utils import export_dict_to_excel
 from utils import get_filename
 from utils import read_excel_file_to_data_frame
@@ -10,6 +11,8 @@ from utils import get_ids_from_file
 from videos import create_video_metadata
 from videos import get_video_transcript
 from videos import write_transcript_to_file
+from utils import get_filename_ordered
+
 
 
 #*****************************************************************************************************
@@ -24,6 +27,8 @@ def get_channel_activity(youtube, channel_id):
             channelId=channel_id
         )
         responseActivities = requestActivities.execute()
+        state.state_yt = state.update_quote_usage(state.state_yt,state.UNITS_ACTIVITIES_LIST)
+
         for item in responseActivities["items"]:
             if "snippet" in item:
                 record["activityDate"] = item["snippet"].get("publishedAt","NA")
@@ -179,12 +184,13 @@ def get_all_videos_by_a_channel(youtube, channel_id):
                 part="snippet",
                 channelId=channel_id,
                 type="video",
-                maxResults=50,
+                maxResults=state.MAX_SEARCH_RESULTS_PER_REQUEST,
                 order="date",
                 pageToken=nextPageToken
 
             )
             response_videos_channels= video_channels_request.execute()
+            state.state_yt = state.update_quote_usage(state.state_yt, state.UNITS_SEARCH_LIST)
 
             # Obtain video_id for each video in the response
             videos_ids = []
@@ -197,6 +203,7 @@ def get_all_videos_by_a_channel(youtube, channel_id):
                 part="contentDetails,snippet,statistics",
                 id=','.join(videos_ids)
             )
+            state.state_yt = state.update_quote_usage(state.state_yt, state.UNITS_VIDEOS_LIST)
 
             videos_response = videos_request.execute()
 
@@ -229,6 +236,10 @@ def get_all_videos_by_a_channel(youtube, channel_id):
 def get_channels_metadata(youtube, channel_ids, export):
 
     try:
+
+        if len(channel_ids)==0:
+                return {}
+
         nextPageToken = None
         while True:
             records = {}
@@ -236,11 +247,13 @@ def get_channels_metadata(youtube, channel_ids, export):
             channels_request = youtube.channels().list(
                 part="contentDetails,id,snippet,statistics,status,topicDetails",
                 id=','.join(channel_ids),
-                maxResults=50,
+                maxResults=state.MAX_CHANNELS_PER_REQUEST,
                 pageToken=nextPageToken
             )
 
             channels_response = channels_request.execute()
+            #Update quote usage
+            state.state_yt = state.update_quote_usage(state.state_yt, state.UNITS_CHANNELS_LIST)
 
             for item in channels_response["items"]:
                 record = create_channel_dict(youtube, item)
@@ -253,6 +266,7 @@ def get_channels_metadata(youtube, channel_ids, export):
         print("Error on getting channel metadata for channels ")
         print(sys.exc_info()[0])
         traceback.print_exc()
+
 
     if export==True:
         # Export info to excel
@@ -270,7 +284,7 @@ def get_channels_metadata(youtube, channel_ids, export):
 #It returns a dictionary where each entry is a dictionary combining both metadata
 #The functio also exports to excel the combined metadata
 #*****************************************************************************************************
-def get_videos_and_videocreators(youtube, videos_ids, prefix_name):
+def get_videos_and_videocreators_before_state(youtube, videos_ids, prefix_name):
     records = {}
     count = 1
     # We request at most 50 videos at the time to avoid breaking the API
@@ -321,6 +335,105 @@ def get_videos_and_videocreators(youtube, videos_ids, prefix_name):
     return records
 
 
+#*****************************************************************************************************
+#For a given list of videos ids (videos_ids), this function retrieves the metadata for each video and
+#its creator.
+#It returns a dictionary where each entry is a dictionary combining both metadata
+#The functio also exports to excel the combined metadata
+#*****************************************************************************************************
+def get_videos_and_videocreators(youtube, videos_ids, prefix_name, start_index=None):
+
+    records = {}
+    count = 1
+    # We request at most 50 videos at the time to avoid breaking the API
+    slicing = True
+
+    if start_index:
+        start  = start_index
+    else:
+        start = 0
+
+    original_videos_ids = videos_ids
+
+    retrieving_cost = state.total_requests_cost(len(videos_ids)-start,state.MAX_VIDEOS_PER_REQUEST,state.UNITS_VIDEOS_LIST)
+    print ("Retrieving {} videos' metadata with a total cost of {} units".format(len(videos_ids)-start,retrieving_cost))
+    #Add action to state
+    state.state_yt = state.add_action(state.state_yt, state.ACTION_RETRIEVE_VIDEOS)
+    #Save videos_ids to be processed after if we run out of quote
+    state.state_yt = state.set_videos_ids_file(state.state_yt,videos_ids)
+    #Add index of the first video to be processed
+    state.state_yt = state.set_video_index(state.state_yt, start)
+    end=start
+    try:
+        while (slicing):
+            #The cost of retrieving videos and channels
+            retrieving_cost = state.UNITS_VIDEOS_LIST + state.UNITS_CHANNELS_LIST
+
+            #Check if there is available quote
+            if state.under_quote_limit(state.state_yt, retrieving_cost):
+                end = start + state.MAX_VIDEOS_PER_REQUEST
+                if end >= len(original_videos_ids):
+                    end = len(original_videos_ids)
+                    slicing = False
+
+                videos_ids = original_videos_ids[start:end]
+                # Request all videos
+                videos_request = youtube.videos().list(
+                    part="contentDetails,snippet,statistics",
+                    maxResults=state.MAX_VIDEOS_PER_REQUEST,
+                    id=','.join(videos_ids)
+                )
+                videos_response = videos_request.execute()
+                #Update quote_usage
+                state.state_yt = state.update_quote_usage(state.state_yt, state.UNITS_VIDEOS_LIST)
+
+                # Get channel_id
+                channels_ids = []
+                for item in videos_response['items']:
+                    channelId = item["snippet"].get("channelId", None)
+                    channels_ids.append(channelId)
+
+                channels_ids = set(channels_ids)
+                channel_records = get_channels_metadata(youtube, channels_ids, False)
+
+                #Merge video and channel info in only one dictionary
+                for item in videos_response['items']:
+                    metadata = create_video_and_creator_dict(item, channel_records)
+                    print('{} - Video {}'.format(count, metadata["videoId"]))
+                    #records[count] = metadata
+                    records[metadata["videoId"]]=metadata
+                    count = count + 1
+
+                start = end
+                # Add index of the first video to be processed
+                state.state_yt = state.set_video_index(state.state_yt, start)
+            else:
+                slicing = False
+    except:
+        print("Error on get_videos_and_videocreators")
+        print(sys.exc_info()[0])
+        traceback.print_exc()
+
+    # Export info to excel
+    if len(records)>0:
+        directory = 'output'
+        filename = get_filename_ordered(directory, prefix_name, 'xlsx')
+        filename_path = export_dict_to_excel(records, directory, filename)
+        print("Output: " + filename_path)
+
+        #Add output filename to the list of files to merge (in case the action was not completed)
+        state.add_filename_to_list(state.state_yt, state.LIST_VIDEOS_TO_MERGE, directory, filename)
+
+    #if state.under_quote_limit(state.state_yt):
+    #All videos have been retrieved
+    if end >= len(original_videos_ids):
+        #All the retrieval was completed sucessfully
+        state.state_yt = state.remove_action(state.state_yt, state.ACTION_RETRIEVE_VIDEOS)
+
+    # export_channels_videos_for_network(records)
+    return records
+
+
 
 #*****************************************************************************************************
 #This function extracts a list of videos ids from an excel file (The excel file must contain the column
@@ -328,7 +441,7 @@ def get_videos_and_videocreators(youtube, videos_ids, prefix_name):
 #Once extracted this list, the function then calls the function get_videos_and_videocreators to retrieve
 #the videos and its creators' metadata.
 #*****************************************************************************************************
-def get_videos_and_videocreators_from_file(youtube, filename, prefix):
+def get_videos_and_videocreators_from_file_before_state(youtube, filename, prefix):
     try:
         #Load file
         videos_ids = get_ids_from_file(filename, "videoId")
@@ -344,7 +457,27 @@ def get_videos_and_videocreators_from_file(youtube, filename, prefix):
         traceback.print_exc()
 
 
-#get_ids_from_file(filename, id_column)
+#-----------------------------------------------------------------------------------------------------------------------
+#This function extracts a list of videos ids from an excel file (The excel file must contain the column
+#videoId with the videos' ids)
+#Once extracted this list, the function then calls the function get_videos_and_videocreators to retrieve
+#the videos and its creators' metadata.
+#-----------------------------------------------------------------------------------------------------------------------
+def get_videos_and_videocreators_from_file(youtube, filename, prefix, start_index=None):
+    try:
+        #Load file
+        videos_ids = get_ids_from_file(filename, "videoId")
+        if videos_ids:
+            prefix_name = "file_"+ prefix + "_videos_creators"
+            #Get data from YouTube API
+            get_videos_and_videocreators(youtube, videos_ids, prefix_name, start_index)
+        else:
+            print ("Video's ids couldn't be retrieved. Check input file.")
+    except:
+        print("Error on get_videos_and_videocreators_from_file")
+        print(sys.exc_info()[0])
+        traceback.print_exc()
+
 
 
 

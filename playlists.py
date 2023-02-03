@@ -6,14 +6,11 @@ from utils import export_dict_to_excel
 from utils import export_dict_to_csv
 from utils import get_filename
 from videos import create_video_metadata
-from channels import create_video_and_creator_dict
 from channels import get_videos_and_videocreators
-from comments import get_single_video_comments_and_commenters
 from comments import get_videos_comments_and_commenters
 from network import export_network_file
-from network import export_comments_videos_for_network
-from channels import get_channels_metadata
 import pandas as pd
+import state
 
 
 
@@ -27,6 +24,7 @@ def get_playlist_title(youtube, playlistId):
         part='snippet'
     )
     response   = request.execute()
+    state.state_yt = state.update_quote_usage(state.state_yt, state.UNITS_PLAYLIST_LIST)
 
     for item in response['items']:
         title = item["snippet"].get("title","playlist")
@@ -42,12 +40,13 @@ def get_playlist_videos_ids_on_page(youtube, playlist, nextPageToken, videos_ids
 
     # List maxResults videos in a playlist
     requestVideosList = youtube.playlistItems().list(
-        part='contentDetails',
+        part='contentDetails,snippet',
         playlistId=playlist,
-        maxResults=50,  # max is 50
+        maxResults=state.MAX_PLAYLISTITEMS_PER_REQUEST,  # max is 50
         pageToken=nextPageToken
     )
     responseVideosList = requestVideosList.execute()
+    state.state_yt = state.update_quote_usage(state.state_yt, state.UNITS_PLAYLIST_ITEMS_LIST)
 
     # Obtain video_id for each video in the response
     for item in responseVideosList['items']:
@@ -69,11 +68,14 @@ def get_playlist_videos_ids(youtube, playlist):
     videos_ids = []
     while True:
         try:
-            videos_ids, nextPageToken = get_playlist_videos_ids_on_page(youtube, playlist, nextPageToken, videos_ids)
-            pages = pages + 1
-            # if not nextPageToken or pages == 1:
-            if not nextPageToken:
-                break;
+            if state.under_quote_limit(state.state_yt, state.UNITS_PLAYLIST_ITEMS_LIST):
+                videos_ids, nextPageToken = get_playlist_videos_ids_on_page(youtube, playlist, nextPageToken, videos_ids)
+                pages = pages + 1
+                if not nextPageToken:
+                    break
+            else:
+                videos_ids = []
+                break
         except:
             print("Error on getting video list for playlist ")
             print(sys.exc_info()[0])
@@ -91,8 +93,9 @@ def get_playlist_videos_and_videocreators(youtube, playlist, playlist_title, vid
     try:
         if not videos_ids:
             videos_ids = get_playlist_videos_ids(youtube, playlist)
-        prefix_name = "playlist_" + playlist_title + "_videos_creators"
-        records = get_videos_and_videocreators(youtube, videos_ids, prefix_name)
+        if videos_ids:
+            prefix_name = "playlist_" + playlist_title + "_videos_creators"
+            records =  get_videos_and_videocreators(youtube, videos_ids, prefix_name)
     except:
         print("Error on getting video's metadata and creators for playlist ")
         print(sys.exc_info()[0])
@@ -128,15 +131,19 @@ def get_playlist_network(youtube, playlist, playlist_title):
     print ("Retrieving videos' id from playlist \n")
     videos_ids = get_playlist_videos_ids(youtube, playlist)
     videos_ids = list(set(videos_ids))
-    #videos_ids = videos_ids[1:57] ----> For testing and debugging only.
     if videos_ids and len(videos_ids)>0:
+        #Update state with all the actions: retrieve videos, retrieve comments and build network
+        state.add_action(state.state_yt,state.ACTION_RETRIEVE_VIDEOS)
+        state.add_action(state.state_yt, state.ACTION_RETRIEVE_COMMENTS)
+        state.add_action(state.state_yt, state.ACTION_CREATE_NETWORK)
         print ('Getting video and creators metadata \n')
         videos_records = get_playlist_videos_and_videocreators(youtube, playlist, playlist_title, videos_ids)
         print ('Getting comments and commenters metadata \n')
         comments_records = get_playlist_videocomments_and_commenters(youtube, playlist,playlist_title, videos_ids)
         print ('\nExporting network file \n')
-        output_file = export_network_file(playlist_title + "_", videos_records=videos_records, comments_records=comments_records)
-        print("Output is in :" + output_file)
+        if videos_records and comments_records:
+            output_file = export_network_file(playlist_title, videos_records=videos_records, comments_records=comments_records)
+            print("Output is in :" + output_file)
 
 
 #*****************************************************************************************************
@@ -184,9 +191,11 @@ def get_playlist_metadata(youtube, playlist, playlist_title):
         # Request videos
         videos_request = youtube.videos().list(
             part="contentDetails,snippet,statistics",
-            maxResults=50,
+            maxResults=state.MAX_VIDEOS_PER_REQUEST,
             id=','.join(videos_ids)
         )
+        #Increase quote
+        state.state_yt = state.update_quote_usage(state.state_yt,state.UNITS_VIDEOS_LIST)
 
         videos_response = videos_request.execute()
         for item in videos_response['items']:
@@ -206,121 +215,4 @@ def get_playlist_metadata(youtube, playlist, playlist_title):
     filename = export_dict_to_excel(records, directory, filename)
     print('Output: ' + filename)
 
-
-
-#*****************************************************************************************************
-#To be deleted.
-#*****************************************************************************************************
-def get_playlist_videos_and_videocreators_old(youtube, playlist):
-    # Builds a service object. In this case, the service is youtube api, version v3, with the api_key
-    # youtube = build('youtube', 'v3', developerKey=api_key)
-
-    records = {}
-    nextPageToken = None
-    count = 1
-    pages = 0
-
-    while True:
-
-        pages = pages + 1
-        videos_ids = []
-        videos_ids, nextPageToken = get_playlist_videos_ids_on_page(youtube, playlist, nextPageToken, videos_ids)
-
-        # Request all videos
-        videos_request = youtube.videos().list(
-            part="contentDetails,snippet,statistics",
-            maxResults=50,
-            id=','.join(videos_ids)
-        )
-
-        videos_response = videos_request.execute()
-
-        # Get channel_id
-        channels_ids = []
-        for item in videos_response['items']:
-            channelId = item["snippet"].get("channelId", None)
-            channels_ids.append(channelId)
-
-        channels_ids = set(channels_ids)
-        channel_records = get_channels_metadata(youtube, channels_ids, False)
-
-        for item in videos_response['items']:
-            metadata = create_video_and_creator_dict(item, channel_records)
-            print('{} - Video {}'.format(count, metadata["videoId"]))
-            records[count] = metadata
-            count = count + 1
-
-        # if not nextPageToken or pages == 1:
-        if not nextPageToken:
-            break;
-
-    # Export info to excel
-
-    directory = 'output'
-    filename = get_filename('playlist_videos_channels_old', 'xlsx')
-    export_dict_to_excel(records, directory, filename)
-    print("Output: " + filename)
-    # export_channels_videos_for_network(records)
-    return records
-
-
-
-#*****************************************************************************************************
-#To be deleted.
-#*****************************************************************************************************
-def get_playlist_comments_and_commenters_old(youtube, playlist):
-
-    channel_records = {}
-    records = {}
-    try:
-        videos_ids = get_playlist_videos_ids(youtube, playlist)
-        channelId_commenters = []
-
-        for video_id in videos_ids:
-            print("***** Fetching comments for video " + video_id)
-            records, channelId_commenters = get_single_video_comments_and_commenters(youtube, video_id, records, channelId_commenters)
-
-
-        #Get commenter's channels metadata
-        #We request at most 50 channels at the time to avoid breaking the API
-        channelId_commenters = list(set(channelId_commenters))
-        slice = True
-        start = 0
-        while (slice):
-            end = start + 50
-            if end > len(channelId_commenters):
-                end=len(channelId_commenters)
-                slice = False
-            r = get_channels_metadata(youtube, channelId_commenters[start:end], False)
-            channel_records.update(r)
-            start = end
-
-        if len(records)>0:
-            for key, item in records.items():
-                try:
-                    channel_id_commenter = item["authorChannelId"]
-                    channel_info = channel_records[channel_id_commenter]
-                    item.update(channel_info)
-                except:
-                    print ('Error on: ' + channel_id_commenter)
-    except:
-        print("Error on getting video comments for playlist ")
-        print(sys.exc_info()[0])
-        traceback.print_exc()
-
-    print("\n")
-    # Export info to excel
-    directory = 'output'
-    filename = get_filename('playlist_comments_channels_old','xlsx')
-    export_dict_to_excel(records, directory, filename)
-    print("\nOutput: " + filename)
-
-    filename = get_filename('playlist_sub_comments','csv')
-    df = pd.DataFrame.from_dict(records, orient='index')
-    sub_info = df[['id', 'Recipient (video or comment)', 'comment']].T
-    export_dict_to_csv(sub_info, directory, filename)
-    print ("\nOutput: "  +filename)
-
-    export_comments_videos_for_network(records)
-    return records
 
