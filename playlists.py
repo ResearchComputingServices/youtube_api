@@ -142,8 +142,9 @@ def get_playlist_network(youtube, playlist, playlist_title):
         comments_records = get_playlist_videocomments_and_commenters(youtube, playlist,playlist_title, videos_ids)
         print ('\nExporting network file \n')
         if videos_records and comments_records:
-            output_file = export_network_file(playlist_title, videos_records=videos_records, comments_records=comments_records)
-            print("Output is in :" + output_file)
+            if state.state_yt[state.ALL_VIDEOS_RETRIEVED] and state.state_yt[state.ALL_COMMENTS_RETRIEVED]:
+                output_file = export_network_file(playlist_title, videos_records=videos_records, comments_records=comments_records)
+                print("Output is in :" + output_file)
 
 
 #*****************************************************************************************************

@@ -265,7 +265,9 @@ def out_of_quote_msg():
 if __name__ == "__main__":
 
     # Get the current quote
-    #state.update_quote_usage(state.state_yt,1329)
+    #state.update_quote_usage(state.state_yt,3962)
+    #state.state_yt = state.load_state_from_file()
+    #state.clear_state(state.state_yt)  # Quote usage remains and it will not be cleared out
     initialize_quote()
     state.print_state(state.state_yt)
     state.print_quote_usage()

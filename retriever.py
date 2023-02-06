@@ -308,6 +308,7 @@ def resume_retrievals():
     if len(state.state_yt[state.LIST_ACTIONS])==0:
         notify_user(nothing_to_retrieve=True)
         notify_user_on_file(nothing_to_retrieve=True)
+        state.state_yt = state.clear_state(state.state_yt)
         return
 
     #Create youtube data api service
@@ -324,10 +325,11 @@ def resume_retrievals():
     if (len(state.state_yt[state.LIST_ACTIONS]) == 0) or (
         (len(state.state_yt[state.LIST_ACTIONS]) == 1) and (state.ACTION_CREATE_NETWORK in state.state_yt[state.LIST_ACTIONS])):
         # Only network action should remain, if everything has been processed.
-        success = output_retrievals()
-        notify_user(success=success)
-        notify_user_on_file(success=success)
-        state.clear_state(state.state_yt) #Quote usage remains and it will not be cleared out.
+        if state.state_yt[state.ALL_VIDEOS_RETRIEVED] and state.state_yt[state.ALL_COMMENTS_RETRIEVED]:
+            success = output_retrievals()
+            notify_user(success=success)
+            notify_user_on_file(success=success)
+            state.clear_state(state.state_yt) #Quote usage remains and it will not be cleared out.
     else:
         notify_user()
         notify_user_on_file()
@@ -348,6 +350,7 @@ def resume_retrievals_1():
     if len(state.state_yt[state.LIST_ACTIONS])==0:
         notify_user(nothing_to_retrieve=True)
         notify_user_on_file(nothing_to_retrieve=True)
+        state.state_yt = state.clear_state(state.state_yt)
         return
 
     #Create youtube data api service

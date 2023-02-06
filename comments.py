@@ -24,8 +24,9 @@ from channels import get_channels_metadata
 #returns a string without them
 #*****************************************************************************************************
 def soupify_comment(comment):
-    soup = BeautifulSoup(comment, 'html.parser')
-    return soup.get_text()
+    return comment
+    #soup = BeautifulSoup(comment, 'html.parser')
+    #return soup.get_text()
 
 #*****************************************************************************************************
 #This functions gets a comment (a string) and replaces the emojis with the emoji name and  the prefix
@@ -116,6 +117,7 @@ def get_comment_replies(youtube, parent_id):
                 part='id,snippet',
                 parentId = parent_id,
                 maxResults=state.MAX_REPLIES_PER_REQUEST,
+                textFormat='plainText',
                 pageToken=nextPageToken
             )
             responseCommentsList = requestCommentsList.execute()
@@ -263,6 +265,7 @@ def get_video_comments(youtube, video_id, records=None):
                 part='id,snippet,replies',
                 videoId=video_id,
                 maxResults=state.MAX_COMMENTS_PER_REQUEST,    #maxResults = 100
+                textFormat = 'plainText',
                 pageToken=nextPageToken
             )
 
@@ -440,6 +443,7 @@ def get_single_video_comments_and_commenters(youtube, video_id, commentsCount, r
                 part='id,snippet,replies',
                 videoId=video_id,
                 maxResults=state.MAX_COMMENTS_PER_REQUEST,    #maxResults = 100
+                textFormat='plainText',
                 pageToken=nextPageToken
             )
 
@@ -586,6 +590,7 @@ def _save_to_state(start_index,directory,prefix_name):
 
     # Save state action
     state.state_yt = state.add_action(state.state_yt, state.ACTION_RETRIEVE_COMMENTS)
+    state.state_yt = state.set_all_retrieved(state.state_yt, state.ALL_COMMENTS_RETRIEVED, False)
     # Save start index for retrieving comments
     state.state_yt = state.set_comment_index(state.state_yt, start_index)
 
@@ -611,6 +616,139 @@ def _sum_comments_count(comments_count, start):
 #videos given as a parameter (videos_id)
 #*****************************************************************************************************
 def get_videos_comments_and_commenters(youtube, videos_ids, prefix_name, videos_comments_count=None, start_index = None):
+
+    channel_records = {}
+    records = {}
+    filename_records_path =""
+    filename_subrecords_path = ""
+
+    if not start_index:
+       start_index = 0
+
+    directory = 'output'
+    filename_comments, filename_subcomments = _save_to_state(start_index, directory, prefix_name)
+    #state.print_state(state.state_yt)
+
+    #Retrieve the comment count per video (if not preivously retrieved)
+    if not videos_comments_count:
+        videos_ids, videos_comments_count =  obtain_total_comments_for_videos_ids(youtube, videos_ids)
+        if not videos_ids or not videos_comments_count:
+            return records
+
+
+    _total_comments = _sum_comments_count(videos_comments_count,start_index)
+    if _total_comments>0:
+        retrieving_cost = state.total_requests_cost(_total_comments,state.MAX_COMMENTS_PER_REQUEST,state.UNITS_COMMENTS_THREADS_LIST)
+        print ("Retrieving {} comments' metadata with at least a cost of {} units".format(_total_comments,retrieving_cost))
+
+    while (start_index < len(videos_ids)):
+        try:
+            channelId_commenters = []
+            inc = 0
+            while (len(channelId_commenters) < state.MAX_CHANNELS_PER_REQUEST) and (start_index+inc < len(videos_ids)):
+                video_id = videos_ids[start_index + inc]
+                video_id_comments_count = videos_comments_count[video_id]
+                comments_cost = state.total_requests_cost(video_id_comments_count, state.MAX_COMMENTS_PER_REQUEST, state.UNITS_COMMENTS_LIST)
+                commenters_cost = state.total_requests_cost(video_id_comments_count, state.MAX_CHANNELS_PER_REQUEST, state.UNITS_CHANNELS_LIST)
+
+                fully_retrieved = False
+                #We do not have enough quote to retrieve the comments for this video along with its commenter's info
+                if not state.under_quote_limit(state.state_yt,comments_cost+commenters_cost):
+                    print ("There is no enough quote to continue retrieving comments.")
+                    break
+
+                print("***** Fetching comments for video: " + video_id)
+                records, channelId_commenters, fully_retrieved = get_single_video_comments_and_commenters(youtube, video_id, videos_comments_count[video_id], records, channelId_commenters)
+                if not fully_retrieved:
+                    # The videos's comments were not fully retrieved because we run out of quote while retrieving some
+                    # of the comments
+                    print("There is no enough quote to continue retrieving comments.")
+                    break
+
+                inc = inc + 1
+                channelId_commenters = list(set(channelId_commenters))
+
+            if not fully_retrieved:
+                break
+
+            if len(records)==0 or len(channelId_commenters)==0:
+                return records
+
+            #Check that we have quote to retrieve commenters
+            commenters_cost = state.total_requests_cost(len(channelId_commenters), state.MAX_CHANNELS_PER_REQUEST,
+                                                        state.UNITS_CHANNELS_LIST)
+            if not state.under_quote_limit(state.state_yt,commenters_cost):
+                print("There is no enough quote to continue retrieving comments.")
+                break
+
+            #Retrieving channel info
+            print("*** Fetching commenters info")
+            # Get commenter's channels metadata
+            # We request at most 50 channels at the time to avoid breaking the API
+            slice = True
+            start = 0
+            while (slice):
+                end = start + state.MAX_CHANNELS_PER_REQUEST
+                if end > len(channelId_commenters):
+                    end = len(channelId_commenters)
+                    slice = False
+                r = get_channels_metadata(youtube, channelId_commenters[start:end], False)
+                channel_records.update(r)
+                start = end
+
+            for key, item in records.items():
+                try:
+                    channel_id_commenter = item["authorChannelId"]
+                    channel_info = channel_records[channel_id_commenter]
+                    item.update(channel_info)
+                except:
+                    print ('Error on: ' + channel_id_commenter)
+
+            start_index = start_index + inc
+
+        except:
+            print("Error on getting video comments and commenters")
+            print(sys.exc_info()[0])
+            traceback.print_exc()
+
+    print("\n")
+
+    if len(records)>0:
+        # Export info to excel
+        print("*** Saving Info")
+        filename_records_path = export_dict_to_excel(records, directory, filename_comments)
+        filename_subrecords_path = _save_subcomments(records, directory, filename_subcomments)
+        state.state_yt = state.set_comment_index(state.state_yt, start_index)
+        state.add_filename_to_list(state.state_yt, state.LIST_COMMENTS_TO_MERGE, directory, filename_comments)
+        state.add_filename_to_list(state.state_yt, state.LIST_SUBCOMMENTS_TO_MERGE, directory, filename_subcomments)
+
+    if len(filename_records_path)>0:
+        print("Output: " + filename_records_path)
+        print ("Output: "  +filename_subrecords_path)
+
+    if start_index>=len(videos_ids):
+        #All videos were retrieved
+        state.state_yt = state.remove_action(state.state_yt, state.ACTION_RETRIEVE_COMMENTS)
+        state.state_yt = state.set_all_retrieved(state.state_yt, state.ALL_COMMENTS_RETRIEVED, True)
+
+
+
+    #export_comments_videos_for_network(records)
+    return records
+
+
+
+
+
+
+
+
+
+#*****************************************************************************************************
+#This function retrieves all comments, its replies and its commenters ids (channel id) for a list of
+#videos given as a parameter (videos_id)
+#*****************************************************************************************************
+def get_videos_comments_and_commenters_4(youtube, videos_ids, prefix_name, videos_comments_count=None, start_index = None):
 
     channel_records = {}
     records = {}
@@ -672,6 +810,8 @@ def get_videos_comments_and_commenters(youtube, videos_ids, prefix_name, videos_
 
 
             #Check that we have quote to retrieve commenters
+            commenters_cost = state.total_requests_cost(len(channelId_commenters), state.MAX_CHANNELS_PER_REQUEST,
+                                                        state.UNITS_CHANNELS_LIST)
             if not state.under_quote_limit(state.state_yt,commenters_cost):
                 print("There is no enough quote to continue retrieving comments.")
                 break
@@ -729,6 +869,10 @@ def get_videos_comments_and_commenters(youtube, videos_ids, prefix_name, videos_
 
     #export_comments_videos_for_network(records)
     return records
+
+
+
+
 #*****************************************************************************************************
 #This function retrieves all comments, its replies and its commenters ids (channel id) for a list of
 #videos given as a parameter (videos_id)

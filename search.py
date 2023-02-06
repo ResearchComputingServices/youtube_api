@@ -162,9 +162,13 @@ def search_videos_youtube(youtube, query, maxNumberVideos=None, network=None):
         if network:
             print ('Getting comments and commenters metadata ')
             comments_records = get_videos_comments_and_commenters(youtube, videos_ids, "search_" + query + "_comments_commenters")
-            print ('Exporting network file ')
-            output_file = export_network_file("search_" + query, videos_records=videos_records, comments_records=comments_records)
-            if output_file and len(output_file)>0:
-                print("Output is in :" + output_file)
+
+            #we need to do this ONLY WHEN ALL THE COMMENTS HAVE BEEN RETRIEVED
+            if videos_records and comments_records:
+                if state.state_yt[state.ALL_VIDEOS_RETRIEVED] and state.state_yt[state.ALL_COMMENTS_RETRIEVED]:
+                    print ('Exporting network file ')
+                    output_file = export_network_file("search_" + query, videos_records=videos_records, comments_records=comments_records)
+                    if output_file and len(output_file)>0:
+                        print("Output is in :" + output_file)
 
 

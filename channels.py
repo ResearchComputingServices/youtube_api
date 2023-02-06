@@ -359,6 +359,8 @@ def get_videos_and_videocreators(youtube, videos_ids, prefix_name, start_index=N
     print ("Retrieving {} videos' metadata with a total cost of {} units".format(len(videos_ids)-start,retrieving_cost))
     #Add action to state
     state.state_yt = state.add_action(state.state_yt, state.ACTION_RETRIEVE_VIDEOS)
+    state.state_yt = state.set_all_retrieved(state.state_yt, state.ALL_VIDEOS_RETRIEVED, False)
+
     #Save videos_ids to be processed after if we run out of quote
     state.state_yt = state.set_videos_ids_file(state.state_yt,videos_ids)
     #Add index of the first video to be processed
@@ -429,6 +431,7 @@ def get_videos_and_videocreators(youtube, videos_ids, prefix_name, start_index=N
     if end >= len(original_videos_ids):
         #All the retrieval was completed sucessfully
         state.state_yt = state.remove_action(state.state_yt, state.ACTION_RETRIEVE_VIDEOS)
+        state.state_yt = state.set_all_retrieved(state.state_yt, state.ALL_VIDEOS_RETRIEVED, True)
 
     # export_channels_videos_for_network(records)
     return records

@@ -62,8 +62,9 @@ NETWORK_FILE = "network_file"
 VIDEOS_MERGED = "videos_merged"
 COMMENTS_MERGED = "comments_merged"
 QUOTE_USAGE = "quote_usage"
-
-
+ALL_VIDEOS_RETRIEVED = "all_videos_retrieved"
+ALL_COMMENTS_RETRIEVED = "all_comments_retrieved"
+ALL_CHANNELS_RETRIEVED = "all_channels_retrieved"
 
 STATE_DIRECTORY = "state"
 STATE_FILENAME = "state.pkl"
@@ -83,7 +84,10 @@ state_yt = { "api_key" : "",
               "network_file": "",
               "video_index" : 0,
               "comment_index" : 0,
-              "channel_index" : 0
+              "channel_index" : 0,
+              "all_videos_retrieved" : False,
+              "all_comments_retrieved": False,
+              "all_channels_retrieved": False,
            }
 
 def get_fullpath(directory, name):
@@ -223,6 +227,10 @@ def continue_to_retrieve(state):
     under = under_quote_limit(state, UNITS_PLAYLIST_LIST*2)
     return under
 
+def set_all_retrieved(state, field, value):
+    state[field] = value
+    save_state_to_file(state)
+    return state
 
 def clear_state(state, clear_quote=False, clear_api_key=False):
     if clear_api_key:
@@ -242,6 +250,9 @@ def clear_state(state, clear_quote=False, clear_api_key=False):
     state["video_index"]= 0
     state["comment_index"] = 0
     state["channel_index"] = 0
+    state[ALL_VIDEOS_RETRIEVED] = False
+    state[ALL_COMMENTS_RETRIEVED] = False
+    state[ALL_CHANNELS_RETRIEVED] = False
     save_state_to_file(state)
     return state
 
@@ -273,6 +284,9 @@ def print_state(state):
     print ("video index: " + str(state["video_index"]))
     print ("comment index: " + str(state["comment_index"]))
     print ("channel index: " + str(state["channel_index"]))
+    print ("all videos retrieved:" + str(state[ALL_VIDEOS_RETRIEVED]))
+    print ("all comments retrieved: " + str(state[ALL_COMMENTS_RETRIEVED]))
+    print ("all channels retrieved: " + str(state[ALL_CHANNELS_RETRIEVED]))
 
 
 def total_requests_cost(total_items, items_per_request, units_request):
