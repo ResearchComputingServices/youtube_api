@@ -219,6 +219,9 @@ def export_dict_to_excel(records, directory, name):
     filename = secure_filename(name)
     filename_path = os.path.join(full_path, filename)
     df = pd.DataFrame(records).T
+    #df = df.applymap(lambda x: x.encode('unicode_escape').
+    #                               decode('utf-8') if isinstance(x, str) else x)
+    df.to_excel(filename_path, engine='xlsxwriter')
     df.to_excel(filename_path)
     return filename_path
 
@@ -333,6 +336,26 @@ def get_ids_from_file(filename, id_column):
 def delete_file(file):
     if (os.path.isfile(file)):
         os.remove(file)
+
+#***********************************************************************************************************************
+#***********************************************************************************************************************
+def remove_prefix_url(url):
+    #Attempt to remove https from url
+    only_link = url
+    try:
+        prefix = 'https://'
+        if url.startswith(prefix):
+            only_link = url.split(prefix)[1];
+        else:
+            prefix = 'http://'
+            if url.startswith(prefix):
+                only_link = url.split(prefix)[1];
+    except:
+        only_link = url
+
+    return only_link
+
+
 
 
 

@@ -18,6 +18,7 @@ from compare import compare_comments_commenters_files
 from utils import get_playlist_id
 from utils import get_api_key
 import state
+from utils import remove_prefix_url
 
 
 OUT_OF_QUOTE_MSG = "Quote limit has been reached for today. Please restart the app tomorrow."
@@ -263,9 +264,14 @@ def out_of_quote_msg():
 
 #-----------------------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
+    #url = "https://yt3.ggpht.com/ytc/AL5GRJW_GP6jGD-L9YLvDrixKZSsmXh-oNnfOBwmD8Kc9A=s48-c-k-c0x00ffffff-no-rj"
+    #url = 'http://www.youtube.com/channel/UCSIN1AD8IFbr7II4eZFbhdQ'
+    #link = remove_prefix_url(url)
+    
+    #print (link)
 
     # Get the current quote
-    #state.update_quote_usage(state.state_yt,3962)
+    #state.update_quote_usage(state.state_yt,1945)
     #state.state_yt = state.load_state_from_file()
     #state.clear_state(state.state_yt)  # Quote usage remains and it will not be cleared out
     initialize_quote()

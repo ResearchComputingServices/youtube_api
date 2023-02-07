@@ -56,7 +56,7 @@ def create_channel_dict(youtube, item):
         if "snippet" in item:
             record["channel_title"] = item["snippet"].get("title","NA")
             record["channel_description"] = item["snippet"].get("description","NA")
-            record["channel_url"] = "https://www.youtube.com/channel/" + item["id"]
+            record["channel_url"] = "www.youtube.com/channel/" + item["id"]
             record["channel_JoinDate"] = item["snippet"].get("publishedAt","NA")
             record["channel_country"] = item["snippet"].get("country","NA")
 
@@ -98,7 +98,7 @@ def create_video_and_creator_dict(item, channels_records):
             channelId = item["snippet"].get("channelId", "N/A")
 
 
-        url = "https://youtu.be/" + videoId
+        url = "youtu.be/" + videoId
 
         if "statistics" in item:
             views =  item["statistics"].get("viewCount", "N/A")

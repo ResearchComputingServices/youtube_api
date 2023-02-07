@@ -14,6 +14,7 @@ from utils import get_fullpath
 from utils import export_csv_to_excel
 from utils import get_ids_from_file
 from utils import get_filename_ordered
+from utils import remove_prefix_url
 from channels import get_channels_metadata
 
 
@@ -168,7 +169,8 @@ def create_comment_dict(youtube, records, item, commentsCount, comment_number):
             metadata["id"] = item["id"]
             metadata["type"] = "Comment to video"
             metadata["Recipient (video or comment)"] = item["snippet"].get("videoId","")
-            url = "https://youtu.be/" + item["snippet"].get("videoId","")
+            #url = "https://youtu.be/" + item["snippet"].get("videoId","")
+            url = "youtu.be/" + item["snippet"].get("videoId", "")
             metadata["video url"] = url
             comment = item["snippet"]["topLevelComment"]["snippet"].get("textDisplay", "")
             if len(comment) > 0:
@@ -176,9 +178,9 @@ def create_comment_dict(youtube, records, item, commentsCount, comment_number):
                 comment = demojize_comment(comment)
             metadata["comment"] = comment
             metadata["authorDisplayName"] = item["snippet"]["topLevelComment"]["snippet"].get("authorDisplayName", "")
-            metadata["authorProfileImageUrl"] = item["snippet"]["topLevelComment"]["snippet"].get("authorProfileImageUrl",                                                                                         "")
+            metadata["authorProfileImageUrl"] = remove_prefix_url(item["snippet"]["topLevelComment"]["snippet"].get("authorProfileImageUrl"),                                                                                         "")
             metadata["authorChannelId"] = item["snippet"]["topLevelComment"]["snippet"]["authorChannelId"].get("value","")
-            metadata["authorChannelUrl"] = item["snippet"]["topLevelComment"]["snippet"].get("authorChannelUrl","")
+            metadata["authorChannelUrl"] = remove_prefix_url(item["snippet"]["topLevelComment"]["snippet"].get("authorChannelUrl",""))
             metadata["likeCount"] = item["snippet"]["topLevelComment"]["snippet"].get("likeCount", "")
             metadata["publishedAt"] = item["snippet"]["topLevelComment"]["snippet"].get("publishedAt", "")
             metadata["scrappedAt"] = current_datetime_str
@@ -210,7 +212,7 @@ def create_comment_dict(youtube, records, item, commentsCount, comment_number):
 
                     metadata["comment"] = comment
                     metadata["authorChannelId"] = reply["snippet"]["authorChannelId"].get("value", "")
-                    metadata["authorChannelUrl"] = reply["snippet"].get("authorChannelUrl", "")
+                    metadata["authorChannelUrl"] = remove_prefix_url(reply["snippet"].get("authorChannelUrl", ""))
                     metadata["authorDisplayName"] = reply["snippet"].get("authorDisplayName", "")
                     metadata["authorProfileImageUrl"] = reply["snippet"].get("authorProfileImageUrl", "")
                     metadata["likeCount"] = reply["snippet"].get("likeCount", "")
@@ -329,7 +331,8 @@ def create_comment_and_commenter_dict(youtube, records, item, commentsCount, com
             metadata["id"] = item["id"]
             metadata["type"] = "Comment"
             metadata["Recipient (video or comment)"] = item["snippet"].get("videoId","")
-            url = "https://youtu.be/" + item["snippet"].get("videoId","")
+            #url = "https://youtu.be/" + item["snippet"].get("videoId","")
+            url = "youtu.be/" + item["snippet"].get("videoId", "")
             metadata["video url"] = url
             #metadata["original_comment"] = item["snippet"]["topLevelComment"]["snippet"].get("textDisplay","") #debug only
             comment = item["snippet"]["topLevelComment"]["snippet"].get("textDisplay","")
@@ -338,10 +341,10 @@ def create_comment_and_commenter_dict(youtube, records, item, commentsCount, com
                 comment = demojize_comment(comment)
             metadata["comment"] = comment
             metadata["authorDisplayName"] = item["snippet"]["topLevelComment"]["snippet"].get("authorDisplayName", "")
-            metadata["authorProfileImageUrl"] = item["snippet"]["topLevelComment"]["snippet"].get("authorProfileImageUrl","")
+            metadata["authorProfileImageUrl"] = remove_prefix_url(item["snippet"]["topLevelComment"]["snippet"].get("authorProfileImageUrl",""))
             commenter_channel_id = item["snippet"]["topLevelComment"]["snippet"]["authorChannelId"].get("value","")
             metadata["authorChannelId"] = commenter_channel_id
-            metadata["authorChannelUrl"] = item["snippet"]["topLevelComment"]["snippet"].get("authorChannelUrl","")
+            metadata["authorChannelUrl"] = remove_prefix_url(item["snippet"]["topLevelComment"]["snippet"].get("authorChannelUrl",""))
             metadata["likeCount"] = item["snippet"]["topLevelComment"]["snippet"].get("likeCount", "")
             metadata["publishedAt"] = item["snippet"]["topLevelComment"]["snippet"].get("publishedAt", "")
             metadata["scrappedAt"] = current_datetime_str
@@ -385,9 +388,9 @@ def create_comment_and_commenter_dict(youtube, records, item, commentsCount, com
                     metadata["comment"] = comment
                     commenter_channel_id = reply["snippet"]["authorChannelId"].get("value", "")
                     metadata["authorChannelId"] = commenter_channel_id
-                    metadata["authorChannelUrl"] = reply["snippet"].get("authorChannelUrl", "")
+                    metadata["authorChannelUrl"] = remove_prefix_url(reply["snippet"].get("authorChannelUrl", ""))
                     metadata["authorDisplayName"] = reply["snippet"].get("authorDisplayName", "")
-                    metadata["authorProfileImageUrl"] = reply["snippet"].get("authorProfileImageUrl", "")
+                    metadata["authorProfileImageUrl"] = remove_prefix_url(reply["snippet"].get("authorProfileImageUrl", ""))
                     metadata["likeCount"] = reply["snippet"].get("likeCount", "")
                     metadata["publishedAt"] = reply["snippet"].get("publishedAt", "")
                     metadata["scrappedAt"] = current_datetime_str
@@ -716,6 +719,7 @@ def get_videos_comments_and_commenters(youtube, videos_ids, prefix_name, videos_
     if len(records)>0:
         # Export info to excel
         print("*** Saving Info")
+
         filename_records_path = export_dict_to_excel(records, directory, filename_comments)
         filename_subrecords_path = _save_subcomments(records, directory, filename_subcomments)
         state.state_yt = state.set_comment_index(state.state_yt, start_index)
