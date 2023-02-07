@@ -15,7 +15,9 @@ from utils import export_csv_to_excel
 from utils import get_ids_from_file
 from utils import get_filename_ordered
 from utils import remove_prefix_url
+from utils import export_dict_to_excel_unicode_escape
 from channels import get_channels_metadata
+
 
 
 
@@ -589,7 +591,7 @@ def _save_state_csv(start_index,directory, prefix_name):
 #This function saves to the state the start_index, the action (retrieve comments)
 #The filenames of the output
 #-----------------------------------------------------------------------------------------------------------------------
-def _save_to_state(start_index,directory,prefix_name):
+def _save_to_state(start_index):
 
     # Save state action
     state.state_yt = state.add_action(state.state_yt, state.ACTION_RETRIEVE_COMMENTS)
@@ -597,11 +599,6 @@ def _save_to_state(start_index,directory,prefix_name):
     # Save start index for retrieving comments
     state.state_yt = state.set_comment_index(state.state_yt, start_index)
 
-    #Save filename to states
-    filename_comments = get_filename_ordered(directory, prefix_name, 'xlsx')
-    filename_subcomments = get_filename_ordered(directory, prefix_name +'_SUB','csv')
-
-    return filename_comments, filename_subcomments
 
 
 #*****************************************************************************************************
@@ -628,8 +625,12 @@ def get_videos_comments_and_commenters(youtube, videos_ids, prefix_name, videos_
     if not start_index:
        start_index = 0
 
+    _save_to_state(start_index)
     directory = 'output'
-    filename_comments, filename_subcomments = _save_to_state(start_index, directory, prefix_name)
+    filename_comments = get_filename_ordered(directory, prefix_name, 'xlsx')
+    filename_subcomments = get_filename_ordered(directory, prefix_name + '_SUB', 'xlsx')
+
+
     #state.print_state(state.state_yt)
 
     #Retrieve the comment count per video (if not preivously retrieved)
@@ -719,12 +720,25 @@ def get_videos_comments_and_commenters(youtube, videos_ids, prefix_name, videos_
     if len(records)>0:
         # Export info to excel
         print("*** Saving Info")
+        try:
+            filename_records_path = export_dict_to_excel(records, directory, filename_comments)
+        except:
+            # Error ocurred when exporting comments.
+            # Remove special characters
+            filename_records_path = export_dict_to_excel_unicode_escape(records, directory, filename_comments)
 
-        filename_records_path = export_dict_to_excel(records, directory, filename_comments)
-        filename_subrecords_path = _save_subcomments(records, directory, filename_subcomments)
         state.state_yt = state.set_comment_index(state.state_yt, start_index)
         state.add_filename_to_list(state.state_yt, state.LIST_COMMENTS_TO_MERGE, directory, filename_comments)
+
+        try:
+            filename_subrecords_path = export_dict_to_excel(records, directory, filename_subcomments)
+        except:
+            # Error ocurred when exporting comments.
+            # Remove special characters
+            filename_subrecords_path = export_dict_to_excel_unicode_escape(records, directory, filename_subcomments)
+
         state.add_filename_to_list(state.state_yt, state.LIST_SUBCOMMENTS_TO_MERGE, directory, filename_subcomments)
+
 
     if len(filename_records_path)>0:
         print("Output: " + filename_records_path)

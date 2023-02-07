@@ -18,7 +18,7 @@ from compare import compare_comments_commenters_files
 from utils import get_playlist_id
 from utils import get_api_key
 import state
-from utils import remove_prefix_url
+from scrapper import get_input_arguments
 
 
 OUT_OF_QUOTE_MSG = "Quote limit has been reached for today. Please restart the app tomorrow."
@@ -234,6 +234,7 @@ def initialize_quote():
     else:
         state.set_api_key(state.state_yt, get_api_key())
 
+
 #-----------------------------------------------------------------------------------------------------------------------
 #Reset the state after
 #-----------------------------------------------------------------------------------------------------------------------
@@ -251,7 +252,7 @@ def reset_state(clear_quote=False, clear_api_key=False):
 #-----------------------------------------------------------------------------------------------------------------------
 #This function prints a msg when the quote capacity has been reached and exits the program
 #-----------------------------------------------------------------------------------------------------------------------
-def out_of_quote_msg():
+def check_out_of_quote():
     #We verify if we can perform any other request
     if len(state.state_yt[state.LIST_ACTIONS])>0:
         print(STATE_IN_USE_MSG)
@@ -264,22 +265,16 @@ def out_of_quote_msg():
 
 #-----------------------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
-    #url = "https://yt3.ggpht.com/ytc/AL5GRJW_GP6jGD-L9YLvDrixKZSsmXh-oNnfOBwmD8Kc9A=s48-c-k-c0x00ffffff-no-rj"
-    #url = 'http://www.youtube.com/channel/UCSIN1AD8IFbr7II4eZFbhdQ'
-    #link = remove_prefix_url(url)
-    
-    #print (link)
 
-    # Get the current quote
-    #state.update_quote_usage(state.state_yt,1945)
-    #state.state_yt = state.load_state_from_file()
-    #state.clear_state(state.state_yt)  # Quote usage remains and it will not be cleared out
+    option, playlist, query = get_input_arguments()
+
+
     initialize_quote()
     state.print_state(state.state_yt)
     state.print_quote_usage()
-    out_of_quote_msg()
+    check_out_of_quote()
 
-    #out_of_quote_msg()
+    #check_out_of_quote()
     #state.print_quote_usage()
 
     option = ""
@@ -293,7 +288,7 @@ if __name__ == "__main__":
     while (option.upper() != "X"):
         option = display_menu()
         execute_option(option)
-        out_of_quote_msg()
+        check_out_of_quote()
         # If there is enough quote usage, the state should be cleared for the following option as options are independent
         reset_state()
         state.print_quote_usage()

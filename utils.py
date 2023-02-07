@@ -227,6 +227,21 @@ def export_dict_to_excel(records, directory, name):
 
 
 #*****************************************************************************************************
+#This functions exports a dictionary to a excel file with filename given as a parameter
+#*****************************************************************************************************
+def export_dict_to_excel_unicode_escape(records, directory, name):
+    abs_path = pathlib.Path().resolve()
+    full_path = os.path.join(abs_path, directory)
+    filename = secure_filename(name)
+    filename_path = os.path.join(full_path, filename)
+    df = pd.DataFrame(records).T
+    df = df.applymap(lambda x: x.encode('unicode_escape').decode('utf-8') if isinstance(x, str) else x)
+    df.to_excel(filename_path, engine='xlsxwriter')
+    df.to_excel(filename_path)
+    return filename_path
+
+
+#*****************************************************************************************************
 #This functions exports a dictionary to a csv file with filename given as a parameter
 #*****************************************************************************************************
 def export_dict_to_csv(records, directory, name, mode='w', index=True, header=True):
