@@ -722,8 +722,8 @@ def get_videos_comments_and_commenters(youtube, videos_ids, prefix_name, videos_
         # Export info to excel
         print("*** Saving Info")
         try:
-            #filename_records_path = export_dict_to_excel(records, directory, filename_comments)
-            filename_records_path = export_dict_to_excel_unicode_escape(records, directory, filename_comments)
+            filename_records_path = export_dict_to_excel(records, directory, filename_comments)
+            #filename_records_path = export_dict_to_excel_unicode_escape(records, directory, filename_comments)
         except:
             # Error ocurred when exporting comments.
             # Remove special characters
