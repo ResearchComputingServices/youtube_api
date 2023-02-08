@@ -1,5 +1,6 @@
 from services import *
 import sys
+import argparse
 from playlists import get_playlist_metadata
 from playlists import get_playlist_videos_comments
 from playlists import get_playlist_videos_and_videocreators
@@ -18,12 +19,49 @@ from compare import compare_comments_commenters_files
 from utils import get_playlist_id
 from utils import get_api_key
 import state
-from scrapper import get_input_arguments
-
 
 OUT_OF_QUOTE_MSG = "Quote limit has been reached for today. Please restart the app tomorrow."
 STATE_IN_USE_MSG = "There are retrieving actions in queue. Please restart the app tomorrow."
 
+
+
+
+def get_input_arguments():
+    my_parser = argparse.ArgumentParser(description='YouTube API scrapper')
+
+    my_parser.add_argument('-o',
+                           '--option',
+                           action='store',
+                           help='YouTube API Menu Option (1, 2, 3, 4, 5)')
+
+    my_parser.add_argument('-p',
+                           '--playlist',
+                           action='store',
+                           help='Playlist to retrieve (for options: 1, 2, or 3)')
+
+    my_parser.add_argument('-q',
+                           '--query',
+                           action='store',
+                           help='Query to search (for options: 4 or 5)')
+
+    my_parser.add_argument('-v',
+                           '--videos',
+                           action='store',
+                           help='Number of videos to search (for options: 4 or 5)')
+
+    # Execute the parse_args() method
+    args = my_parser.parse_args()
+
+    option = args.option
+    playlist = args.playlist
+    query = args.query
+    videos = args.videos
+
+    return option, playlist, query, videos
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------------
 def get_playlist_info():
     url = input("Enter URL of the playlist to retrieve videos: ")
     url = url.strip()
@@ -48,30 +86,34 @@ def get_playlist_info():
     return playlist, playlist_title
 
 
+#-----------------------------------------------------------------------------------------------------------------------
+#This function displays the main menu
+#-----------------------------------------------------------------------------------------------------------------------
 def display_menu():
     print('\n-------------------- Options --------------------\n')
 
-    print("[1]: PLAYLIST: Videos")
-    print("[2]: PLAYLIST: Videos' Comments")
-    print("[3]: PLAYLIST: Videos and Creators")
-    print("[4]: PLAYLIST: Videos Comments and Commenters")
-    print("[5]: PLAYLIST: Network")
+    #print("[1]: PLAYLIST: Videos")
+    #print("[2]: PLAYLIST: Videos' Comments")
+    print("[1]: PLAYLIST: Videos and Creators - $")
+    print("[2]: PLAYLIST: Videos Comments and Commenters - $$")
+    print("[3]: PLAYLIST: Network - $$")
     print("---------------------------------------------------")
-    print("[6]: SEARCH: Videos and Creators")
-    print("[7]: SEARCH: Network")
+    print("[4]: SEARCH: Videos and Creators - $$$")
+    print("[5]: SEARCH: Network - $$$$")
     print("---------------------------------------------------")
-    print("[8]: FILE: Videos and Creators")
-    print("[9]: FILE: Comments and Commenters")
-    print("[10]: FILE: Network")
+    print("[6]: FILE: Videos and Creators - $")
+    print("[7]: FILE: Comments and Commenters - $$")
+    print("[8]: FILE: Network ")
     print("---------------------------------------------------")
-    print("[11]: CHANNEL: Metadata")
-    print("[12]: CHANNEL: All Videos")
-    print("[13]: CHANNEL: Latest Activity")
+    print("[9]: CHANNEL: Metadata - $")
+    print("[10]: CHANNEL: All Videos - $$$$$")
+    print("[11]: CHANNEL: Latest Activity - $$$$")
     print("---------------------------------------------------")
-    print("[14] Compare video's retrieval")
-    print("[15] Compare comments' retrieval")
+    print("[12] Compare video's retrieval")
+    print("[13] Compare comments' retrieval")
     print("---------------------------------------------------")
-    print("[16] Print Quote Usage")
+    print("[14] Print Quote Usage")
+    print("[15] Reset State")
     print("---------------------------------------------------")
     print("[X]: Exit")
 
@@ -84,37 +126,42 @@ def display_menu():
     return option
 
 
-def execute_option(option):
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+#This function executes the option menu interactively
+#-----------------------------------------------------------------------------------------------------------------------
+def execute_option_interactive(option):
     # Playlists options
-    if option == "1" or option == "2" or option == "3" or option == "4" or option == "5":
+    if option == "1" or option == "2" or option == "3":
         playlist, playlist_title = get_playlist_info()
 
     # Get all videos' metadata from playlist in config.
-    if option == "1":
-        get_playlist_metadata(youtube, playlist, playlist_title)
-        return
+    #if option == "1":
+    #    get_playlist_metadata(youtube, playlist, playlist_title)
+    #    return
 
     # Get all comments for all the videos on a playlist
-    if option == "2":
-        get_playlist_videos_comments(youtube, playlist, playlist_title)
-        return
+    #if option == "2":
+    #    get_playlist_videos_comments(youtube, playlist, playlist_title)
+    #    return
 
     # Get videos and creators
-    if option == "3":
+    if option == "1":
         get_playlist_videos_and_videocreators(youtube, playlist, playlist_title)
         return
 
     # Get comments and commenters
-    if option == "4":
+    if option == "2":
         get_playlist_videocomments_and_commenters(youtube, playlist, playlist_title)
         return
 
     # Build a network for a playlist
-    if option == "5":
+    if option == "3":
         get_playlist_network(youtube, playlist, playlist_title)
         return
 
-    if option == "6":
+    if option == "4":
         # query = get_query()
         query = input("Please introduce the query to search: ")
         if len(query) == 0:
@@ -124,7 +171,7 @@ def execute_option(option):
         max_videos_with_quote = state.number_of_items_with_quote(state.UNITS_SEARCH_LIST,
                                                                  state.MAX_SEARCH_RESULTS_PER_REQUEST)
 
-        print ("Maximum videos to search with available quote is: {}".format(max_videos_with_quote))
+        print ("Maximum videos to search is: {}".format(max_videos_with_quote))
         numberVideos_str = input("Enter number of videos to search (optional, default is {}): ".format(state.DEFAULT_VIDEOS_TO_RETRIEVE))
         try:
             numberVideos = int(numberVideos_str)
@@ -133,7 +180,7 @@ def execute_option(option):
         search_videos_youtube(youtube, query, maxNumberVideos=numberVideos, network=None)
         return
 
-    if option == "7":
+    if option == "5":
         # query = get_query()
         query = input("Please introduce the query to search: ")
         if len(query) == 0:
@@ -152,19 +199,19 @@ def execute_option(option):
         search_videos_youtube(youtube, query, maxNumberVideos=numberVideos, network=True)
         return
 
-    if option == "8":
+    if option == "6":
         filename = input("Filename with videos Ids to request videos and creators: ")
         prefix = input("Type a prefix for the output filename [optional]: ")
         get_videos_and_videocreators_from_file(youtube, filename.rstrip(), prefix)
         return
 
-    if option == "9":
+    if option == "7":
         filename = input("Filename with videos Ids to request comments and commenters: ")
         prefix = input("Type a prefix for the output filename [optional]: ")
         get_videos_comments_and_commenters_from_file(youtube, filename.rstrip(), prefix)
         return
 
-    if option == "10":
+    if option == "8":
         videosFilename = input("Filename with videos and creators: ")
         commentsFilename = input("Filename with comments and commenters: ")
         prefix = input("Type a prefix for the output filename [optional]: ")
@@ -173,52 +220,119 @@ def execute_option(option):
         print("Output is in :" + output_file)
         return
 
-    if option == "11":
+    if option == "9":
         file = input("Input file with channels ids to retrieve channel's metadata: ")
         prefix = input("Introduce a prefix name for the file: ")
         get_metadata_channels_from_file(youtube, file.rstrip(), prefix)
         return
 
-    if option == "12":
+    if option == "10":
         file = input("Input file with channels ids to retrieve all videos: ")
         prefix = input("Introduce a prefix name for the file: ")
         get_all_videos_by_all_channels_from_file(youtube, file.rstrip(), prefix)
         return
 
-    if option == "13":
+    if option == "11":
         file = input("Input file with channels ids to retrieve the latest channels' activity: ")
         prefix = input("Introduce a prefix name for the file: ")
         get_channels_activity_from_file(youtube, file.rstrip(), prefix)
         return
 
-    # if option=="14":
-    #    video_id = input ("Introduce video id: ")
-    #    get_video_metadata(youtube, video_id)
-    #   return
-
-    # if option=="15":
-    #    video_id = input ("Introduce video id: ")
-    #    records = get_video_comments(youtube, video_id, None)
-    #    filename = export_dict_to_excel(records, 'output', 'video_' + video_id + '_comments.xlsx')
-    #    print ("Output is in: " + 'video_' + video_id + '_comments.xlsx')
-    #   return
-
-    if option == "14":
+    if option == "12":
         file1 = input("1st. File to compare (videos & creators): ")
         file2 = input("2nd. File to compare (videos & creators): ")
         filename = input("Type an infix  for the output filename [optional]: ")
         compare_video_creators_files(file1.rstrip(), file2.rstrip(), filename)
         return
 
-    if option == "15":
+    if option == "13":
         file1 = input("1st. File to compare (comments & commenters): ")
         file2 = input("2nd. File to compare (comments & commenters): ")
         filename = input("Type an infix  for the output filename [optional]: ")
         compare_comments_commenters_files(file1.rstrip(), file2.rstrip(), filename)
         return
 
-    if option == "16":
+    if option == "14":
         state.print_quote_usage()
+        return
+
+
+    if option == "15":
+        print ("This option will remove any retrieving actions that are in queue.")
+        quote_str = input  ("Quote usage (optional): ")
+        try:
+            quote = int(quote_str)
+        except:
+            quote = 0
+
+        proceed = input('Are you sure to proceed? [Y/N]')
+        if proceed.upper() != "Y":
+            sys.exit()
+
+        state.state_yt = state.clear_state(state.state_yt, clear_quote=True, clear_api_key=False)
+        state.state_yt = state.set_quote_usage(state.state_yt, quote)
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+#This function executes the option menu without user intervention
+#-----------------------------------------------------------------------------------------------------------------------
+def execute_option(option, playlist, query, videos):
+
+    if option == "1" or option == "2" or option == "3":
+        url = playlist
+        url = url.strip()
+        if not url:
+            print("Invalid URL")
+            sys.exit()
+
+        playlist = get_playlist_id(url)
+        if not playlist:
+            print ("Invalid URL")
+            sys.exit()
+
+        playlist_title = get_playlist_title(youtube, playlist)
+        if not playlist_title:
+            print("The URL doesn't correspond to a playlist.")
+            sys.exit()
+
+    # Get videos and creators
+    if option == "3":
+        get_playlist_videos_and_videocreators(youtube, playlist, playlist_title)
+        return
+
+    # Get comments and commenters
+    if option == "4":
+        get_playlist_videocomments_and_commenters(youtube, playlist, playlist_title)
+        return
+
+    # Build a network for a playlist
+    if option == "5":
+        get_playlist_network(youtube, playlist, playlist_title)
+        return
+
+    if option == "6":
+        if len(query) == 0:
+            print("Invalid query")
+            sys.exit()
+        numberVideos_str = videos
+        try:
+            numberVideos = int(numberVideos_str)
+        except:
+            numberVideos = None
+        search_videos_youtube(youtube, query, maxNumberVideos=numberVideos, network=None, interactive=False)
+        return
+
+    if option == "7":
+        if len(query) == 0:
+            print("Invalid query")
+            sys.exit()
+
+        numberVideos_str = videos
+        try:
+            numberVideos = int(numberVideos_str)
+        except:
+            numberVideos = None
+        search_videos_youtube(youtube, query, maxNumberVideos=numberVideos, network=True, interactive=False)
         return
 
 
@@ -265,37 +379,35 @@ def check_out_of_quote():
 
 #-----------------------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
-
-    option, playlist, query = get_input_arguments()
-
-
     initialize_quote()
-    state.print_state(state.state_yt)
+    #state.state_yt = state.set_quote_usage(state.state_yt,9)
+    #state.print_state(state.state_yt)
     state.print_quote_usage()
     check_out_of_quote()
 
-    #check_out_of_quote()
-    #state.print_quote_usage()
-
-    option = ""
     # youtube = build_service_oauth()
     youtube = build_service_api_key()
     if not youtube:
         print("Error when creating API Youtube service.")
         sys.exit()
 
+    #Get input argments to run options without user intervention
+    option, playlist, query, videos = get_input_arguments()
+    if option:
+        execute_option(option, playlist, query, videos)
+    else:
+        option = ""
+        while (option.upper() != "X"):
+            option = display_menu()
+            execute_option_interactive(option)
+            check_out_of_quote()
+            # If there is enough quote usage, the state should be cleared for the following option as options are independent
+            reset_state()
+            state.print_quote_usage()
+            if option.upper() != "X":
+                input("Press any key to continue")
 
-    while (option.upper() != "X"):
-        option = display_menu()
-        execute_option(option)
-        check_out_of_quote()
-        # If there is enough quote usage, the state should be cleared for the following option as options are independent
-        reset_state()
-        state.print_quote_usage()
-        if option.upper() != "X":
-            input("Press any key to continue")
-
-    state.print_state(state.state_yt)
+    #state.print_state(state.state_yt)
 
 
 

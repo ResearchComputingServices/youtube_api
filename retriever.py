@@ -85,7 +85,7 @@ def merge_excel_files(file_list, output_filename):
 def reset_quote():
     state.state_yt = state.load_state_from_file()
     state.state_yt = state.set_quote_usage(state.state_yt, 0)
-    state.print_state(state.state_yt)
+    #state.print_state(state.state_yt)
 
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -338,7 +338,7 @@ def resume_retrievals():
 def resume_retrievals_1():
     #Load current state
     state.state_yt = state.load_state_from_file()
-    state.print_state(state.state_yt)
+    #state.print_state(state.state_yt)
 
 
 
@@ -372,7 +372,7 @@ def resume_retrievals_1():
         notify_user()
 
 if __name__ == "__main__":
-    #reset_quote()
+    reset_quote()
     resume_retrievals()
     #state.state_yt = state.load_state_from_file()
     #print ("=======================================")

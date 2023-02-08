@@ -34,7 +34,7 @@ UNITS_PLAYLIST_LIST = 1
 UNITS_SEARCH_LIST = 100
 UNITS_VIDEOS_LIST = 1
 #UNITS_QUOTE_LIMIT = 10000
-UNITS_QUOTE_LIMIT = 9900
+UNITS_QUOTE_LIMIT = 10000
 
 MAX_JOIN_VIDEOS_IDS = 50
 MAX_CHANNELS_PER_REQUEST = 50
@@ -44,6 +44,7 @@ MAX_VIDEOS_PER_REQUEST= 50
 MAX_PLAYLISTITEMS_PER_REQUEST = 50
 MAX_SEARCH_RESULTS_PER_REQUEST = 50
 DEFAULT_VIDEOS_TO_RETRIEVE = 200
+MAX_VIDEOS_TO_RETRIEVE = 500
 
 ACTION_RETRIEVE_VIDEOS = "retrieve_videos"
 ACTION_RETRIEVE_COMMENTS = "retrieve_comments"
@@ -68,6 +69,8 @@ ALL_CHANNELS_RETRIEVED = "all_channels_retrieved"
 
 STATE_DIRECTORY = "state"
 STATE_FILENAME = "state.pkl"
+
+SAFETY_BACKUP = 0
 
 
 state_yt = { "api_key" : "",
@@ -219,7 +222,7 @@ def under_quote_limit(state, cost=None):
     if not cost:
         cost = 0
     under = True
-    if (state["quote_usage"] + cost)>UNITS_QUOTE_LIMIT:
+    if (state["quote_usage"] + cost)>(UNITS_QUOTE_LIMIT-SAFETY_BACKUP):
         under = False
     return under
 

@@ -130,7 +130,7 @@ def get_videos_by_keyword_metadata(youtube, query):
 #The maxNumberVideos given as parameter is optional. The default is 100. This parameter should be
 #on multiples of 50.
 #*****************************************************************************************************
-def search_videos_youtube(youtube, query, maxNumberVideos=None, network=None):
+def search_videos_youtube(youtube, query, maxNumberVideos=None, network=None, interactive=True):
     print ("Executing query/YouTube search ")
 
     videos_with_quote = state.number_of_items_with_quote(state.UNITS_SEARCH_LIST, state.MAX_SEARCH_RESULTS_PER_REQUEST)
@@ -140,10 +140,11 @@ def search_videos_youtube(youtube, query, maxNumberVideos=None, network=None):
         else:
             maxNumberVideos = videos_with_quote
 
-    cost = state.total_requests_cost(maxNumberVideos,state.MAX_SEARCH_RESULTS_PER_REQUEST,state.UNITS_SEARCH_LIST)
-    proceed = input ("Search {} videos for query \"{}\" with a cost of {} units [Y/N]? ".format(maxNumberVideos,query,cost))
-    if proceed.upper() != "Y":
-        sys.exit()
+    if interactive:
+        cost = state.total_requests_cost(maxNumberVideos,state.MAX_SEARCH_RESULTS_PER_REQUEST,state.UNITS_SEARCH_LIST)
+        proceed = input ("Search {} videos for query \"{}\" with a cost of {} units [Y/N]? ".format(maxNumberVideos,query,cost))
+        if proceed.upper() != "Y":
+            sys.exit()
 
 
     videos_ids = get_videos_id_by_query(youtube, query,maxNumberVideos)

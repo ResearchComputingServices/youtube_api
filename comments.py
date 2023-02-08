@@ -642,8 +642,9 @@ def get_videos_comments_and_commenters(youtube, videos_ids, prefix_name, videos_
 
     _total_comments = _sum_comments_count(videos_comments_count,start_index)
     if _total_comments>0:
-        retrieving_cost = state.total_requests_cost(_total_comments,state.MAX_COMMENTS_PER_REQUEST,state.UNITS_COMMENTS_THREADS_LIST)
-        print ("Retrieving {} comments' metadata with at least a cost of {} units".format(_total_comments,retrieving_cost))
+        #retrieving_cost = state.total_requests_cost(_total_comments,state.MAX_COMMENTS_PER_REQUEST,state.UNITS_COMMENTS_THREADS_LIST)
+        #print ("Retrieving {} comments' metadata with at least a cost of {} units".format(_total_comments,retrieving_cost))
+        print("Retrieving {} comments' metadata".format(_total_comments))
 
     while (start_index < len(videos_ids)):
         try:
@@ -721,10 +722,12 @@ def get_videos_comments_and_commenters(youtube, videos_ids, prefix_name, videos_
         # Export info to excel
         print("*** Saving Info")
         try:
-            filename_records_path = export_dict_to_excel(records, directory, filename_comments)
+            #filename_records_path = export_dict_to_excel(records, directory, filename_comments)
+            filename_records_path = export_dict_to_excel_unicode_escape(records, directory, filename_comments)
         except:
             # Error ocurred when exporting comments.
             # Remove special characters
+            print ("Exporting with unicode escape format...")
             filename_records_path = export_dict_to_excel_unicode_escape(records, directory, filename_comments)
 
         state.state_yt = state.set_comment_index(state.state_yt, start_index)
@@ -735,6 +738,7 @@ def get_videos_comments_and_commenters(youtube, videos_ids, prefix_name, videos_
         except:
             # Error ocurred when exporting comments.
             # Remove special characters
+            print("Exporting with unicode escape format...")
             filename_subrecords_path = export_dict_to_excel_unicode_escape(records, directory, filename_subcomments)
 
         state.add_filename_to_list(state.state_yt, state.LIST_SUBCOMMENTS_TO_MERGE, directory, filename_subcomments)
