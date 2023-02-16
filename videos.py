@@ -3,7 +3,6 @@ from utils import export_dict_to_excel
 from transcripts import get_video_transcript
 from transcripts import write_transcript_to_file
 import datetime
-import pprint
 import traceback
 import sys
 import state
@@ -100,8 +99,9 @@ def get_video_metadata(youtube, video_id):
         id=video_id
     )
 
-    videos_response = videos_request.execute()
     state.state_yt = state.update_quote_usage(state.state_yt, state.UNITS_VIDEOS_LIST)
+    videos_response = videos_request.execute()
+
 
     for item in videos_response['items']:
         metadata = create_video_metadata(item)

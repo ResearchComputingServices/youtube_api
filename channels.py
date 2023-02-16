@@ -1,4 +1,3 @@
-import pprint
 import traceback
 import sys
 import datetime
@@ -22,22 +21,29 @@ def get_channel_activity(youtube, channel_id):
 
     record = {}
     try:
-        requestActivities = youtube.activities().list(
-            part="snippet,contentDetails",
-            channelId=channel_id
-        )
-        responseActivities = requestActivities.execute()
-        state.state_yt = state.update_quote_usage(state.state_yt,state.UNITS_ACTIVITIES_LIST)
+        if state.under_quote_limit(state.state_yt, state.UNITS_ACTIVITIES_LIST):
+            requestActivities = youtube.activities().list(
+                part="snippet,contentDetails",
+                channelId=channel_id
+            )
+            state.state_yt = state.update_quote_usage(state.state_yt, state.UNITS_ACTIVITIES_LIST)
+            responseActivities = requestActivities.execute()
 
-        for item in responseActivities["items"]:
-            if "snippet" in item:
-                record["activityDate"] = item["snippet"].get("publishedAt","NA")
-                record["activityType"] = item["snippet"].get("type","NA")
-                actType = item["snippet"].get("title",None)
-                if not actType:
-                    actType = item["snippet"].get("channelTitle","NA")
-                record["activityTitle"] = actType
-            break
+            if len(responseActivities["items"])>0:
+                for item in responseActivities["items"]:
+                    if "snippet" in item:
+                        record["activityDate"] = item["snippet"].get("publishedAt","NA")
+                        record["activityType"] = item["snippet"].get("type","NA")
+                        actType = item["snippet"].get("title",None)
+                        if not actType:
+                            actType = item["snippet"].get("channelTitle","NA")
+                        record["activityTitle"] = actType
+                    break
+            else:
+                record=-1
+        else:
+            record = -2
+            return record
     except:
         print("Error on getting channels activity ")
         print(sys.exc_info()[0])
@@ -180,50 +186,56 @@ def get_all_videos_by_a_channel(youtube, channel_id):
 
     try:
         while True:
-            video_channels_request = youtube.search().list(
-                part="snippet",
-                channelId=channel_id,
-                type="video",
-                maxResults=state.MAX_SEARCH_RESULTS_PER_REQUEST,
-                order="date",
-                pageToken=nextPageToken
+            if state.under_quote_limit(state.state_yt, state.UNITS_SEARCH_LIST+state.UNITS_VIDEOS_LIST):
+                video_channels_request = youtube.search().list(
+                    part="snippet",
+                    channelId=channel_id,
+                    type="video",
+                    maxResults=state.MAX_SEARCH_RESULTS_PER_REQUEST,
+                    order="date",
+                    pageToken=nextPageToken
 
-            )
-            response_videos_channels= video_channels_request.execute()
-            state.state_yt = state.update_quote_usage(state.state_yt, state.UNITS_SEARCH_LIST)
+                )
+                state.state_yt = state.update_quote_usage(state.state_yt, state.UNITS_SEARCH_LIST)
+                response_videos_channels= video_channels_request.execute()
 
-            # Obtain video_id for each video in the response
-            videos_ids = []
-            for item in response_videos_channels['items']:
-                videoId = item["id"].get("videoId", "N/A")
-                videos_ids.append(videoId)
+                # Obtain video_id for each video in the response
+                videos_ids = []
+                #There is at least one video to register
+                if len(response_videos_channels['items'])>0:
+                    for item in response_videos_channels['items']:
+                        videoId = item["id"].get("videoId", "N/A")
+                        videos_ids.append(videoId)
 
-            # Request all videos
-            videos_request = youtube.videos().list(
-                part="contentDetails,snippet,statistics",
-                id=','.join(videos_ids)
-            )
-            state.state_yt = state.update_quote_usage(state.state_yt, state.UNITS_VIDEOS_LIST)
+                    # Request all videos
+                    videos_request = youtube.videos().list(
+                        part="contentDetails,snippet,statistics",
+                        id=','.join(videos_ids)
+                    )
+                    state.state_yt = state.update_quote_usage(state.state_yt, state.UNITS_VIDEOS_LIST)
+                    videos_response = videos_request.execute()
 
-            videos_response = videos_request.execute()
-
-            for item in videos_response['items']:
-                metadata = create_video_metadata(item)
-                print('Channel {} - Video {} {}'.format(channel_id,item["id"],count))
-                #pprint.pprint(metadata)
-                records[count] = metadata
-                count = count + 1
-
-            nextPageToken = response_videos_channels.get('nextPageToken')
-            pages = pages + 1
-            #if not nextPageToken or pages == 2:
-            if not nextPageToken:
-                break;
+                    for item in videos_response['items']:
+                        metadata = create_video_metadata(item)
+                        print('Channel {} - Video {} {}'.format(channel_id,item["id"],count))
+                        #pprint.pprint(metadata)
+                        records[count] = metadata
+                        count = count + 1
+                else:
+                    records = -1
+                nextPageToken = response_videos_channels.get('nextPageToken')
+                pages = pages + 1
+                if not nextPageToken:
+                    break;
+            else:
+                records = -2
+                return records
 
     except:
         print("Error on getting all videos by a channel ")
         print(sys.exc_info()[0])
         traceback.print_exc()
+        return None
 
     return records
 
@@ -251,9 +263,9 @@ def get_channels_metadata(youtube, channel_ids, export):
                 pageToken=nextPageToken
             )
 
-            channels_response = channels_request.execute()
-            #Update quote usage
+            # Update quote usage
             state.state_yt = state.update_quote_usage(state.state_yt, state.UNITS_CHANNELS_LIST)
+            channels_response = channels_request.execute()
 
             for item in channels_response["items"]:
                 record = create_channel_dict(youtube, item)
@@ -275,65 +287,6 @@ def get_channels_metadata(youtube, channel_ids, export):
         print ("Output is in " + filename)
 
     return records
-
-
-
-#*****************************************************************************************************
-#For a given list of videos ids (videos_ids), this function retrieves the metadata for each video and
-#its creator.
-#It returns a dictionary where each entry is a dictionary combining both metadata
-#The functio also exports to excel the combined metadata
-#*****************************************************************************************************
-def get_videos_and_videocreators_before_state(youtube, videos_ids, prefix_name):
-    records = {}
-    count = 1
-    # We request at most 50 videos at the time to avoid breaking the API
-    slicing = True
-    start = 0
-
-    original_videos_ids = videos_ids
-    while (slicing):
-        end = start + 50
-        if end >= len(original_videos_ids):
-            end = len(original_videos_ids)
-            slicing = False
-
-        videos_ids = original_videos_ids[start:end]
-        # Request all videos
-        videos_request = youtube.videos().list(
-            part="contentDetails,snippet,statistics",
-            maxResults=50,
-            id=','.join(videos_ids)
-        )
-        videos_response = videos_request.execute()
-
-        # Get channel_id
-        channels_ids = []
-        for item in videos_response['items']:
-            channelId = item["snippet"].get("channelId", None)
-            channels_ids.append(channelId)
-
-        channels_ids = set(channels_ids)
-        channel_records = get_channels_metadata(youtube, channels_ids, False)
-
-        #Merge video and channel info in only one dictionary
-        for item in videos_response['items']:
-            metadata = create_video_and_creator_dict(item, channel_records)
-            print('{} - Video {}'.format(count, metadata["videoId"]))
-            #records[count] = metadata
-            records[metadata["videoId"]]=metadata
-            count = count + 1
-
-        start = end
-
-    # Export info to excel
-    directory = 'output'
-    filename = get_filename(prefix_name, 'xlsx')
-    filename = export_dict_to_excel(records, directory, filename)
-    print("Output: " + filename)
-    # export_channels_videos_for_network(records)
-    return records
-
 
 #*****************************************************************************************************
 #For a given list of videos ids (videos_ids), this function retrieves the metadata for each video and
@@ -385,9 +338,9 @@ def get_videos_and_videocreators(youtube, videos_ids, prefix_name, start_index=N
                     maxResults=state.MAX_VIDEOS_PER_REQUEST,
                     id=','.join(videos_ids)
                 )
-                videos_response = videos_request.execute()
-                #Update quote_usage
+                # Update quote_usage
                 state.state_yt = state.update_quote_usage(state.state_yt, state.UNITS_VIDEOS_LIST)
+                videos_response = videos_request.execute()
 
                 # Get channel_id
                 channels_ids = []
@@ -437,29 +390,6 @@ def get_videos_and_videocreators(youtube, videos_ids, prefix_name, start_index=N
     return records
 
 
-
-#*****************************************************************************************************
-#This function extracts a list of videos ids from an excel file (The excel file must contain the column
-#videoId with the videos' ids)
-#Once extracted this list, the function then calls the function get_videos_and_videocreators to retrieve
-#the videos and its creators' metadata.
-#*****************************************************************************************************
-def get_videos_and_videocreators_from_file_before_state(youtube, filename, prefix):
-    try:
-        #Load file
-        videos_ids = get_ids_from_file(filename, "videoId")
-        if videos_ids:
-            prefix_name = "file_"+ prefix + "_videos_creators"
-            #Get data from YouTube API
-            get_videos_and_videocreators(youtube, videos_ids, prefix_name)
-        else:
-            print ("Video's ids couldn't be retrieved. Check input file.")
-    except:
-        print("Error on get_videos_and_videocreators_from_file")
-        print(sys.exc_info()[0])
-        traceback.print_exc()
-
-
 #-----------------------------------------------------------------------------------------------------------------------
 #This function extracts a list of videos ids from an excel file (The excel file must contain the column
 #videoId with the videos' ids)
@@ -489,21 +419,62 @@ def get_videos_and_videocreators_from_file(youtube, filename, prefix, start_inde
 #***********************************************************************************************************************
 #Get last activity for a list of channels
 #***********************************************************************************************************************
-def get_channels_activity_from_file(youtube, filename, prefix):
+def get_channels_activity_from_file(youtube, filename, prefix, start_index=None):
     try:
         #Load file
         records={}
-        channels_ids = get_ids_from_file(filename, "channelId")
-        if channels_ids:
-            #Get data from YouTube API
-            for id in channels_ids:
-                records[id]=get_channel_activity(youtube, id)
+        print ("Retrieving the last activity of all the channels... \n")
+        channels_ids_ori = get_ids_from_file(filename, "channelId")
+        channels_ids = remove_duplicates(channels_ids_ori)
 
-            # Export info to excel
-            directory = 'output'
-            filename = get_filename(prefix + "_channels_activity_", 'xlsx')
-            filename = export_dict_to_excel(records, directory, filename)
-            print("Output: " + filename)
+        if channels_ids:
+            state.state_yt = state.add_action(state.state_yt,  state.ACTION_RETRIEVE_CHANNELS_ACTIVITY)
+            state.state_yt = state.set_all_retrieved(state.state_yt, state.ALL_CHANNELS_RETRIEVED, False)
+
+            # Add index of the first channel to be processed
+            if not start_index:
+                start_index = 0
+
+            state.state_yt = state.set_channel_index(state.state_yt, start_index)
+
+            # Save channels_ids to be processed after if we run out of quote
+            state.state_yt = state.set_channels_ids_file(state.state_yt, channels_ids)
+
+            # Get data from YouTube API
+            # Get data from YouTube API
+            while (state.under_quote_limit(state.state_yt, state.UNITS_ACTIVITIES_LIST)) and (
+                    start_index < len(channels_ids)):
+                id = channels_ids[start_index]
+                print ("Processing channel {}".format(id))
+                r = get_channel_activity(youtube, id)
+
+                #Run out of quote
+                if r and r==-2:
+                    break
+
+                if r and r!=-1:
+                    records[id] = r
+
+                start_index = start_index + 1
+                state.state_yt = state.set_channel_index(state.state_yt, start_index)
+
+            if len(records) > 0:
+                # Export info to excel
+                directory = 'output'
+                filename = get_filename_ordered(directory, prefix + "channels_activity", 'xlsx')
+                filename_path = export_dict_to_excel(records, directory, filename)
+                print("Output: " + filename_path)
+
+                # Add output filename to the list of files to merge (in case the action was not completed)
+                state.add_filename_to_list(state.state_yt, state.LIST_CHANNELS_TO_MERGE, directory, filename)
+
+            # All videos have been retrieved
+            if start_index >= len(channels_ids):
+                # All the retrieval were completed successfully
+                state.state_yt = state.remove_action(state.state_yt, state.ACTION_RETRIEVE_CHANNELS_ACTIVITY)
+                state.state_yt = state.set_all_retrieved(state.state_yt, state.ALL_CHANNELS_RETRIEVED, True)
+            else:
+                print("\nOut of quote. Not all the channels were processed. \n")
         else:
             print ("Channel's ids couldn't be retrieved. Check input file.")
     except:
@@ -517,93 +488,132 @@ def get_channels_activity_from_file(youtube, filename, prefix):
 #***********************************************************************************************************************
 #Get all videos for all the channels ids in a file
 #***********************************************************************************************************************
-def get_all_videos_by_all_channels_from_file(youtube, filename, prefix):
+def get_all_videos_by_all_channels_from_file(youtube, filename, prefix, start_index = None):
     #Load file
     try:
         records={}
         count=0
-        channels_ids = get_ids_from_file(filename, "channelId")
+        channels_ids_ori = get_ids_from_file(filename, "channelId")
+        channels_ids = remove_duplicates(channels_ids_ori)
         if channels_ids:
-            #Get data from YouTube API
-            for id in channels_ids:
-                videos =get_all_videos_by_a_channel(youtube, id)
-                for video in videos.items():
-                    video[1]["channelId"] = id
-                    records[count] = video[1]
-                    count = count + 1
+            print ("Retrieving all videos for all the channels in a given file...")
+            state.state_yt = state.add_action(state.state_yt, state.ACTION_RETRIEVE_CHANNELS_ALL_VIDEOS)
+            state.state_yt = state.set_all_retrieved(state.state_yt, state.ALL_CHANNELS_RETRIEVED, False)
 
-            # Export info to excel
-            directory = 'output'
-            filename = get_filename(prefix + "_all_videos_by_channels", 'xlsx')
-            filename = export_dict_to_excel(records, directory, filename)
-            print("Output: " + filename)
+            # Add index of the first channel to be processed
+            if not start_index:
+                start_index = 0
+
+            state.state_yt = state.set_channel_index(state.state_yt, start_index)
+
+            # Save channels_ids to be processed after if we run out of quote
+            state.state_yt = state.set_channels_ids_file(state.state_yt, channels_ids)
+
+            #Get data from YouTube API
+            # Get data from YouTube API
+            maximum_retrieving_cost = state.UNITS_SEARCH_LIST*5+state.UNITS_VIDEOS_LIST*5
+            while (state.under_quote_limit(state.state_yt, maximum_retrieving_cost) and (start_index < len(channels_ids))):
+                id = channels_ids[start_index]
+                videos = get_all_videos_by_a_channel(youtube, id)
+                if videos and videos==-2: #We run out of quote
+                    break
+                if videos and videos!=-1: #The channel doesn't have any updated videos
+                    for video in videos.items():
+                        video[1]["channelId"] = id
+                        records[count] = video[1]
+                        count = count + 1
+                else:
+                    print ("Channel {} doesn't have uploaded videos.".format(id))
+                start_index = start_index + 1
+                state.state_yt = state.set_channel_index(state.state_yt, start_index)
+
+            if len(records) > 0:
+                #Export info to excel
+                directory = 'output'
+                filename = get_filename_ordered(directory, prefix + "all_videos_by_channels", 'xlsx')
+                filename_path = export_dict_to_excel(records, directory, filename)
+                print("Output: " + filename_path)
+
+                # Add output filename to the list of files to merge (in case the action was not completed)
+                state.add_filename_to_list(state.state_yt, state.LIST_CHANNELS_TO_MERGE, directory, filename)
+
+            # All videos have been retrieved
+            if start_index >= len(channels_ids):
+                # All the retrieval was completed successfully
+                state.state_yt = state.remove_action(state.state_yt, state.ACTION_RETRIEVE_CHANNELS_ALL_VIDEOS)
+                state.state_yt = state.set_all_retrieved(state.state_yt, state.ALL_CHANNELS_RETRIEVED, True)
+            else:
+                print("Out of quote. Not all the channels were processed.")
         else:
             print ("Channel's ids couldn't be retrieved. Check input file.")
     except:
-        print("Error on get_channels_activity_from_file")
+        print("Error on get_all_videos_by_all_channels_from_file")
         print(sys.exc_info()[0])
         traceback.print_exc()
 
     return
 
 
+# **********************************************************************************************************************
+# **********************************************************************************************************************
+def remove_duplicates(list):
+    clean_list=[]
+    for item in list:
+        if item not in clean_list:
+            clean_list.append(item)
+    return clean_list
 
-#***********************************************************************************************************************
-#Get all videos for all the channels ids in a file
-#***********************************************************************************************************************
-def get_all_videos_by_all_channels_from_file(youtube, filename, prefix):
-    #Load file
+# ***********************************************************************************************************************
+# Get all videos for all the channels ids in a file
+# ***********************************************************************************************************************
+def get_metadata_channels_from_file(youtube, filename, prefix, start_index = None):
+    # Load file
     try:
-        records={}
-        count=0
-        channels_ids = get_ids_from_file(filename, "channelId")
-        if channels_ids:
-            #Get data from YouTube API
-            for id in channels_ids:
-                videos =get_all_videos_by_a_channel(youtube, id)
-                for video in videos.items():
-                    video[1]["channelId"] = id
-                    records[count] = video[1]
-                    count = count + 1
+        records = {}
+        channels_ids_ori = get_ids_from_file(filename, "channelId")
+        channels_ids = remove_duplicates(channels_ids_ori)
+        if channels_ids and len(channels_ids)>0:
+            state.state_yt = state.add_action(state.state_yt, state.ACTION_RETRIEVE_CHANNELS_METADATA)
+            state.state_yt = state.set_all_retrieved(state.state_yt, state.ALL_CHANNELS_RETRIEVED, False)
+            # Add index of the first channel to be processed
+            if not start_index:
+                start_index = 0
 
-            # Export info to excel
-            directory = 'output'
-            filename = get_filename(prefix + "_all_videos_by_channels", 'xlsx')
-            filename = export_dict_to_excel(records, directory, filename)
-            print("Output: " + filename)
-        else:
-            print ("Channel's ids couldn't be retrieved. Check input file.")
-    except:
-        print("Error on get_channels_activity_from_file")
-        print(sys.exc_info()[0])
-        traceback.print_exc()
+            state.state_yt = state.set_channel_index(state.state_yt, start_index)
+            # Save channels_ids to be processed after if we run out of quote
+            state.state_yt = state.set_channels_ids_file(state.state_yt, channels_ids)
 
-    return
-
-
-#***********************************************************************************************************************
-#Get all videos for all the channels ids in a file
-#***********************************************************************************************************************
-def get_metadata_channels_from_file(youtube, filename, prefix):
-    #Load file
-    try:
-        records={}
-        channels_ids = get_ids_from_file(filename, "channelId")
-        if channels_ids:
-            #Get data from YouTube API
-            for id in channels_ids:
-                metadata = get_channels_metadata(youtube,[id],False)
+            # Get data from YouTube API
+            while (state.under_quote_limit(state.state_yt, state.UNITS_CHANNELS_LIST)) and (start_index<len(channels_ids)):
+                id =channels_ids[start_index]
+                print ("Obtaining metadata for channel {}".format(id))
+                metadata = get_channels_metadata(youtube, [id], False)
                 records[id] = metadata[id]
+                start_index = start_index + 1
+                state.state_yt = state.set_channel_index(state.state_yt, start_index)
 
-            # Export info to excel
-            directory = 'output'
-            filename = get_filename(prefix + "_channels_metadata", 'xlsx')
-            filename = export_dict_to_excel(records, directory, filename)
-            print("Output: " + filename)
+
+            if len(records)>0:
+                # Export info to excel
+                directory = 'output'
+                filename = get_filename_ordered(directory,prefix + "channels_metadata", 'xlsx')
+                filename_path = export_dict_to_excel(records, directory, filename)
+                print("Output: " + filename_path)
+
+            # Add output filename to the list of files to merge (in case the action was not completed)
+            state.add_filename_to_list(state.state_yt, state.LIST_CHANNELS_TO_MERGE, directory, filename)
+
+            # All videos have been retrieved
+            if start_index >= len(channels_ids):
+                # All the retrieval was completed sucessfully
+                state.state_yt = state.remove_action(state.state_yt, state.ACTION_RETRIEVE_CHANNELS_METADATA)
+                state.state_yt = state.set_all_retrieved(state.state_yt, state.ALL_CHANNELS_RETRIEVED, True)
+            else:
+                print ("Out of quote. Not all the channels were processed.")
         else:
-            print ("Channel's ids couldn't be retrieved. Check input file.")
+            print("Channel's ids couldn't be retrieved. Check input file.")
     except:
-        print("Error on get_channels_activity_from_file")
+        print("Error on get_channels_metadata_from_file")
         print(sys.exc_info()[0])
         traceback.print_exc()
 

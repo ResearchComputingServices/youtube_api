@@ -23,8 +23,9 @@ def get_playlist_title(youtube, playlistId):
         id = playlistId,
         part='snippet'
     )
-    response   = request.execute()
     state.state_yt = state.update_quote_usage(state.state_yt, state.UNITS_PLAYLIST_LIST)
+    response   = request.execute()
+
 
     for item in response['items']:
         title = item["snippet"].get("title","playlist")
@@ -45,8 +46,10 @@ def get_playlist_videos_ids_on_page(youtube, playlist, nextPageToken, videos_ids
         maxResults=state.MAX_PLAYLISTITEMS_PER_REQUEST,  # max is 50
         pageToken=nextPageToken
     )
-    responseVideosList = requestVideosList.execute()
+
     state.state_yt = state.update_quote_usage(state.state_yt, state.UNITS_PLAYLIST_ITEMS_LIST)
+    responseVideosList = requestVideosList.execute()
+
 
     # Obtain video_id for each video in the response
     for item in responseVideosList['items']:

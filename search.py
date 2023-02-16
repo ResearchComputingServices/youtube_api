@@ -38,8 +38,10 @@ def get_videos_id_by_query(youtube, query, numberVideosToRetrieve):
                 pageToken=nextPageToken
 
             )
-            response_videos_channels = video_channels_request.execute()
+
             state.state_yt = state.update_quote_usage(state.state_yt, state.UNITS_SEARCH_LIST)
+            response_videos_channels = video_channels_request.execute()
+
 
             # Obtain video_id for each video in the response
             for item in response_videos_channels['items']:
@@ -80,8 +82,9 @@ def get_videos_by_keyword_metadata(youtube, query):
                 pageToken=nextPageToken
 
             )
-            response_videos_channels = video_channels_request.execute()
             state.state_yt = state.update_quote_usage(state.state_yt, state.UNITS_SEARCH_LIST)
+            response_videos_channels = video_channels_request.execute()
+
 
             # Obtain video_id for each video in the response
             videos_ids = []
@@ -95,8 +98,9 @@ def get_videos_by_keyword_metadata(youtube, query):
                 id=','.join(videos_ids)
             )
 
-            videos_response = videos_request.execute()
             state.state_yt = state.update_quote_usage(state.state_yt, state.UNITS_VIDEOS_LIST)
+            videos_response = videos_request.execute()
+
 
             for item in videos_response['items']:
                 metadata = create_video_metadata(item)

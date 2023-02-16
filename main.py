@@ -1,8 +1,6 @@
 from services import *
 import sys
 import argparse
-from playlists import get_playlist_metadata
-from playlists import get_playlist_videos_comments
 from playlists import get_playlist_videos_and_videocreators
 from playlists import get_playlist_videocomments_and_commenters
 from playlists import get_playlist_network
@@ -49,15 +47,20 @@ def get_input_arguments():
                            action='store',
                            help='Number of videos to search (for options: 4 or 5)')
 
+    my_parser.add_argument('-f',
+                           '--filename',
+                           action='store',
+                           help='Filename (for options: 6, 7, 9, 10, 11)')
+
     # Execute the parse_args() method
     args = my_parser.parse_args()
-
     option = args.option
     playlist = args.playlist
     query = args.query
     videos = args.videos
+    filename = args.filename
 
-    return option, playlist, query, videos
+    return option, playlist, query, videos, filename
 
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -126,6 +129,58 @@ def display_menu():
     return option
 
 
+#-----------------------------------------------------------------------------------------------------------------------
+#This function displays the main menu
+#-----------------------------------------------------------------------------------------------------------------------
+def display_restricted_menu():
+    print('\n-------------------- Options --------------------\n')
+
+    print("[1] Print Quote Usage")
+    print("[2] Print State")
+    print("[3] Reset State")
+    print("---------------------------------------------------")
+    print("[X]: Exit")
+
+    option = input("Please introduce your option: ")
+
+    if not option:
+        print('An option should be provided.')
+        sys.exit()
+
+    return option
+
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+#This function executes the option menu interactively
+#-----------------------------------------------------------------------------------------------------------------------
+def execute_option_restricted(option):
+
+    if option == "1":
+        state.print_quote_usage()
+        return
+
+    if option == "2":
+        state.print_state(state.state_yt)
+        return
+
+
+    if option == "3":
+        print ("This option will remove any retrieving actions that are in queue.")
+        quote_str = input  ("New quote usage (optional): ")
+        try:
+            quote = int(quote_str)
+        except:
+            quote = 0
+
+        proceed = input('Are you sure to proceed? [Y/N]')
+        if proceed.upper() != "Y":
+            sys.exit()
+
+        state.state_yt = state.clear_state(state.state_yt, clear_quote=True, clear_api_key=False)
+        state.state_yt = state.set_quote_usage(state.state_yt, quote)
+
+    sys.exit()
 
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -276,8 +331,9 @@ def execute_option_interactive(option):
 #-----------------------------------------------------------------------------------------------------------------------
 #This function executes the option menu without user intervention
 #-----------------------------------------------------------------------------------------------------------------------
-def execute_option(option, playlist, query, videos):
+def execute_option(option, playlist, query, videos, filename):
 
+    prefix=""
     if option == "1" or option == "2" or option == "3":
         url = playlist
         url = url.strip()
@@ -296,21 +352,21 @@ def execute_option(option, playlist, query, videos):
             sys.exit()
 
     # Get videos and creators
-    if option == "3":
+    if option == "1":
         get_playlist_videos_and_videocreators(youtube, playlist, playlist_title)
         return
 
     # Get comments and commenters
-    if option == "4":
+    if option == "2":
         get_playlist_videocomments_and_commenters(youtube, playlist, playlist_title)
         return
 
     # Build a network for a playlist
-    if option == "5":
+    if option == "3":
         get_playlist_network(youtube, playlist, playlist_title)
         return
 
-    if option == "6":
+    if option == "4":
         if len(query) == 0:
             print("Invalid query")
             sys.exit()
@@ -322,7 +378,7 @@ def execute_option(option, playlist, query, videos):
         search_videos_youtube(youtube, query, maxNumberVideos=numberVideos, network=None, interactive=False)
         return
 
-    if option == "7":
+    if option == "5":
         if len(query) == 0:
             print("Invalid query")
             sys.exit()
@@ -333,6 +389,26 @@ def execute_option(option, playlist, query, videos):
         except:
             numberVideos = None
         search_videos_youtube(youtube, query, maxNumberVideos=numberVideos, network=True, interactive=False)
+        return
+
+    if option == "6":
+        get_videos_and_videocreators_from_file(youtube, filename.rstrip(), prefix)
+        return
+
+    if option == "7":
+        get_videos_comments_and_commenters_from_file(youtube, filename.rstrip(), prefix)
+        return
+
+    if option == "9":
+        get_metadata_channels_from_file(youtube, filename.rstrip(), prefix)
+        return
+
+    if option == "10":
+        get_all_videos_by_all_channels_from_file(youtube, filename.rstrip(), prefix)
+        return
+
+    if option == "11":
+        get_channels_activity_from_file(youtube, filename.rstrip(), prefix)
         return
 
 
@@ -346,20 +422,21 @@ def initialize_quote():
     if state_on_file:
         state.state_yt = state_on_file
     else:
-        state.set_api_key(state.state_yt, get_api_key())
+        state.state_yt  = state.set_api_key(state.state_yt, get_api_key())
 
 
 #-----------------------------------------------------------------------------------------------------------------------
 #Reset the state after
 #-----------------------------------------------------------------------------------------------------------------------
 def reset_state(clear_quote=False, clear_api_key=False):
+
     if len(state.state_yt[state.LIST_ACTIONS])==0:
-        #There is still at least one action that couldn't be completed.
         state.state_yt = state.clear_state(state.state_yt, clear_quote, clear_api_key)
 
-    if len(state.state_yt[state.LIST_ACTIONS])>0 and len(state.state_yt[state.VIDEOS_IDS_FILE])==0:
+    if (len(state.state_yt[state.LIST_ACTIONS])>0 and len(state.state_yt[state.VIDEOS_IDS_FILE])==0
+            and len(state.state_yt[state.CHANNELS_IDS_FILE])==0):
         #Something went wrong.
-        #There actions to retrieve but not videos' id file where to take the ids.
+        #There actions to retrieve but not videos' id or channels' ids where to take the ids.
         state.state_yt = state.clear_state(state.state_yt, clear_quote, clear_api_key)
 
 
@@ -380,7 +457,7 @@ def check_out_of_quote():
 #-----------------------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
     initialize_quote()
-    #state.state_yt = state.set_quote_usage(state.state_yt,9)
+    #state.state_yt = state.set_quote_usage(state.state_yt,3099)
     #state.print_state(state.state_yt)
     state.print_quote_usage()
     check_out_of_quote()
@@ -392,9 +469,11 @@ if __name__ == "__main__":
         sys.exit()
 
     #Get input argments to run options without user intervention
-    option, playlist, query, videos = get_input_arguments()
+    option, playlist, query, videos, filename = get_input_arguments()
     if option:
-        execute_option(option, playlist, query, videos)
+        execute_option(option, playlist, query, videos, filename)
+        check_out_of_quote()
+        reset_state()
     else:
         option = ""
         while (option.upper() != "X"):
@@ -404,6 +483,7 @@ if __name__ == "__main__":
             # If there is enough quote usage, the state should be cleared for the following option as options are independent
             reset_state()
             state.print_quote_usage()
+            option ="X"
             if option.upper() != "X":
                 input("Press any key to continue")
 

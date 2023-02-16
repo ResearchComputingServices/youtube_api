@@ -49,12 +49,18 @@ MAX_VIDEOS_TO_RETRIEVE = 500
 ACTION_RETRIEVE_VIDEOS = "retrieve_videos"
 ACTION_RETRIEVE_COMMENTS = "retrieve_comments"
 ACTION_CREATE_NETWORK = "create_network"
+ACTION_RETRIEVE_CHANNELS_METADATA = "retrieve_channels_metadata"
+ACTION_RETRIEVE_CHANNELS_ACTIVITY = "retrieve_channels_activity"
+ACTION_RETRIEVE_CHANNELS_ALL_VIDEOS = "retrieve_channels_all_videos"
 
 LIST_VIDEOS_TO_MERGE = "videos_files_to_merge"
 LIST_COMMENTS_TO_MERGE = "comments_files_to_merge"
 LIST_SUBCOMMENTS_TO_MERGE = "subcomments_files_to_merge"
 LIST_ACTIONS ="actions"
+LIST_CHANNELS_TO_MERGE = "channels_files_to_merge"
+
 VIDEOS_IDS_FILE = "videos_ids_file"
+CHANNELS_IDS_FILE = "channels_ids_file"
 COMMENTS_COUNT_FILE = "videos_comments_count_file"
 VIDEO_INDEX = "video_index"
 COMMENT_INDEX = "comment_index"
@@ -62,6 +68,7 @@ CHANNEL_INDEX = "channel_index"
 NETWORK_FILE = "network_file"
 VIDEOS_MERGED = "videos_merged"
 COMMENTS_MERGED = "comments_merged"
+CHANNELS_MERGED = "channels_merged"
 QUOTE_USAGE = "quote_usage"
 ALL_VIDEOS_RETRIEVED = "all_videos_retrieved"
 ALL_COMMENTS_RETRIEVED = "all_comments_retrieved"
@@ -77,6 +84,7 @@ state_yt = { "api_key" : "",
               "quote_usage"  : 0,
               "actions" : [],
               "videos_ids_file" : "",
+              "channels_ids_file" : "",
               "videos_comments_count_file" : None,
               "videos_files_to_merge" : [],
               "videos_merged" : "",
@@ -84,6 +92,8 @@ state_yt = { "api_key" : "",
               "comments_merged" : "",
               "subcomments_files_to_merge" : [],
               "subcomments_merged" : "",
+              "channels_files_to_merge" : [],
+              "channels_merged" : "",
               "network_file": "",
               "video_index" : 0,
               "comment_index" : 0,
@@ -178,6 +188,20 @@ def set_videos_ids_file(state, videos_ids):
     return state
 
 
+def set_channels_ids_file(state, channels_ids):
+    try:
+        directory = STATE_DIRECTORY
+        name = "channels_ids_temp.xlsx"
+        fullpath = export_list_to_excel(channels_ids, directory, name, ['channelId'])
+        state["channels_ids_file"] = fullpath
+        save_state_to_file(state)
+    except:
+        print("Error on set_channels_ids_file (state.py)")
+        print(sys.exc_info()[0])
+        traceback.print_exc()
+    return state
+
+
 def set_videos_comments_count_file(state, comments_count):
     try:
         directory = STATE_DIRECTORY
@@ -242,6 +266,7 @@ def clear_state(state, clear_quote=False, clear_api_key=False):
         state["quote_usage"] = 0
     state["actions"]= []
     state["videos_ids_file"]= ""
+    state["channels_ids_file"] = ""
     state["videos_comments_count_file"] = None
     state["videos_files_to_merge"]= []
     state["videos_merged"] = ""
@@ -250,6 +275,8 @@ def clear_state(state, clear_quote=False, clear_api_key=False):
     state["subcomments_files_to_merge"]=[]
     state["subcomments_merged"] = ""
     state["network_file"]= ""
+    state["channels_files_to_merge"] = []
+    state["channels_merged"] = ""
     state["video_index"]= 0
     state["comment_index"] = 0
     state["channel_index"] = 0
@@ -283,6 +310,11 @@ def print_state(state):
     print(state["subcomments_files_to_merge"])
     print ("subcomments_merged")
     print (state["subcomments_merged"])
+    print ("channels_file_to_merge: ")
+    print(state["channels_files_to_merge"])
+    if state["channels_merged"]:
+        print ("channels_merged: ")
+        print (state["channels_merged"])
     print("network file: " + state["network_file"])
     print ("video index: " + str(state["video_index"]))
     print ("comment index: " + str(state["comment_index"]))

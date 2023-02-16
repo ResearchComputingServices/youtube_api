@@ -1,6 +1,9 @@
 import state
 import pandas as pd
 from channels import get_videos_and_videocreators_from_file
+from channels import get_metadata_channels_from_file
+from channels import get_all_videos_by_all_channels_from_file
+from channels import get_channels_activity_from_file
 from comments import get_videos_comments_and_commenters_from_file
 from services import build_service_api_key
 from utils import get_filename
@@ -9,6 +12,7 @@ from utils import export_dict_to_csv
 from utils import get_fullpath
 from network import export_network_file
 from datetime import datetime
+from utils import get_api_key
 import traceback
 import sys
 
@@ -17,7 +21,12 @@ OUTPUT_DIRECTORY = "output"
 OUTPUT_VIDEOS_FILE_NAME = "merged_videos_creators"
 OUTPUT_COMMENTS_FILE_NAME = "merged_comments_commenters"
 OUTPUT_SUB_COMMENTS_FILE_NAME = "merged_subcomments"
-
+OUTPUT_CHANNEL_METADATA_FILE_NAME = "merged_channels_metadata"
+OUTPUT_CHANNEL_ACTIVITY_FILE_NAME = "merged_channels_activity"
+OUTPUT_CHANNEL_ALL_VIDEOS_FILE_NAME = "merged_channels_all_videos"
+CHANNEL_METADATA_TEXT = "Metadata for all the channels"
+CHANNEL_ACTIVITY_TEXT = "Last activity for all the channels"
+CHANNEL_ALL_VIDEOS_TEXT = "All the videos for all the channels"
 
 EXTENSION = "xlsx"
 MSG_LIST = []
@@ -83,9 +92,51 @@ def merge_excel_files(file_list, output_filename):
 #Reset the quote to zero
 #-----------------------------------------------------------------------------------------------------------------------
 def reset_quote():
-    state.state_yt = state.load_state_from_file()
+    state_on_file = state.load_state_from_file()
+    if state_on_file:
+        state.state_yt = state_on_file
+    else:
+        state.state_yt = state.set_api_key(state.state_yt, get_api_key())
+
     state.state_yt = state.set_quote_usage(state.state_yt, 0)
     #state.print_state(state.state_yt)
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+#This function will resume the retrieval of channel's metadata for a set of channels ids
+#Starting in a particular index
+#-----------------------------------------------------------------------------------------------------------------------
+def resume_channels_metadata_retrievals(youtube, state_pr):
+    print ("Resuming channel's metadata retrievals...\n")
+    #Get filename with the videos ids to request
+    filename = state_pr[state.CHANNELS_IDS_FILE]
+    start_index = state_pr[state.CHANNEL_INDEX]
+    prefix = "state"
+    get_metadata_channels_from_file(youtube, filename, prefix, start_index)
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+#This function will resume the retrieval of all videos by a channel for a set of channels ids
+#Starting in a particular index
+#-----------------------------------------------------------------------------------------------------------------------
+def resume_channels_all_videos_retrievals(youtube, state_pr):
+    print ("Resuming all videos by a channel retrievals...\n")
+    #Get filename with the videos ids to request
+    filename = state_pr[state.CHANNELS_IDS_FILE]
+    start_index = state_pr[state.CHANNEL_INDEX]
+    prefix = "state"
+    get_all_videos_by_all_channels_from_file(youtube, filename, prefix, start_index)
+
+#-----------------------------------------------------------------------------------------------------------------------
+#This function will resume the retrieval of all videos by a channel for a set of channels ids
+#Starting in a particular index
+#-----------------------------------------------------------------------------------------------------------------------
+def resume_channels_activity_retrievals(youtube, state_pr):
+    print ("Resuming latest activity for a list of channels... \n")
+    filename = state_pr[state.CHANNELS_IDS_FILE]
+    start_index = state_pr[state.CHANNEL_INDEX]
+    prefix = "state"
+    get_channels_activity_from_file(youtube, filename, prefix, start_index)
 
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -144,6 +195,23 @@ def output_retrievals():
 
     return success
 
+#-----------------------------------------------------------------------------------------------------------------------
+#This function will merge channel retrievals
+#-----------------------------------------------------------------------------------------------------------------------
+def output_channel_retrievals(output_filename):
+
+    print ("Merging files for output...")
+    success = True
+    try:
+        channels_merged_file = merge_excel_files(state.state_yt[state.LIST_CHANNELS_TO_MERGE], output_filename)
+        state.state_yt[state. CHANNELS_MERGED]= channels_merged_file
+    except:
+        success = False
+        print("Error on output_channel_retrievals ")
+        print(sys.exc_info()[0])
+        traceback.print_exc()
+
+    return success
 
 # -----------------------------------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------------------------------
@@ -291,14 +359,86 @@ def notify_user(nothing_to_retrieve=False, success=True):
             print("Build Network ")
 
 
+
+
+# -----------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------------------
+def notify_user_channel_on_file(text):
+
+    try:
+        #Open file
+        name = get_filename("summary","txt")
+        fullname = get_fullpath("summaries", name)
+        f = open(fullname,'w+')
+
+        f.write("\n*****************************************************************\n")
+        f.write("Retrieving status\n")
+        now = datetime.now()
+        dt_string = now.strftime("%b %d %Y %H:%M:%S")
+        f.write(dt_string)
+        f.write("\n")
+        f.write(state.print_quote_usage())
+
+        f.write(text)
+        if len(state.state_yt[state.LIST_CHANNELS_TO_MERGE]) > 0:
+            f.write("\n** Sucessive channel's retrievals are located in: \n")
+            for fn in state.state_yt[state.LIST_CHANNELS_TO_MERGE]:
+                f.write(fn)
+                f.write("\n")
+
+        if len(state.state_yt[state.CHANNELS_MERGED]) > 0:
+            if state.state_yt[state.CHANNELS_MERGED] != "-1":
+                f.write("\n** File with merged channel's retrievals are located in: \n")
+                f.write(state.state_yt[state.CHANNELS_MERGED])
+                f.write("\n")
+            else:
+                f.write("An error occurred when merging retrieved channel's files. \n")
+        else:
+            f.write("** The following actions will be completed when quote is available: \n")
+            f.write(text)
+    except:
+        f.write ("An error occurred while creating this summary. \n")
+
+    f.close()
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------------
+def notify_user_channel(text):
+
+    print ("\n*******************************************************************************************")
+    print ("Retrieving status")
+    now = datetime.now()
+    dt_string = now.strftime("%b %d %Y %H:%M:%S")
+    print(dt_string)
+
+
+    state.print_quote_usage()
+
+    print (text)
+    if len(state.state_yt[state.LIST_CHANNELS_TO_MERGE])>0:
+        print ("\n** Sucessive channel's retrievals are located in: ")
+        for f in state.state_yt[state.LIST_CHANNELS_TO_MERGE]:
+            print (f)
+
+    if len(state.state_yt[state.CHANNELS_MERGED])>0:
+        if state.state_yt[state.CHANNELS_MERGED]!="-1":
+            print ("\n** File with merged channel's retrievals are located in: ")
+            print(state.state_yt[state.CHANNELS_MERGED])
+        else:
+            print ("An error occurred when merging retrieved channel's files. \n")
+    else:
+        print("** The following actions will be completed when quote is available: ")
+        print (text)
+
+
+
 #-----------------------------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------------------
 def resume_retrievals():
     #Load current state
     state.state_yt = state.load_state_from_file()
     state.print_state(state.state_yt)
-
-
 
     if not state.continue_to_retrieve(state.state_yt):
         print ("Out of quote.")
@@ -316,6 +456,46 @@ def resume_retrievals():
     #Actions run in a specific order
     #For example, we cannot retrieve comments and then videos.
     #First retrieve videos,then retrieve comments, and then build a network
+    #Channel retrieving actions are never in combination
+
+    if state.continue_to_retrieve(state.state_yt) and state.ACTION_RETRIEVE_CHANNELS_METADATA in state.state_yt[state.LIST_ACTIONS]:
+        resume_channels_metadata_retrievals(youtube, state.state_yt)
+        #Check if the retrieval finished
+        if state.ACTION_RETRIEVE_CHANNELS_METADATA not in state.state_yt[state.LIST_ACTIONS]:
+            print ("Call procedure to merge files")
+            success = output_channel_retrievals(OUTPUT_CHANNEL_METADATA_FILE_NAME)
+        notify_user_channel(CHANNEL_METADATA_TEXT)
+        notify_user_on_file(CHANNEL_METADATA_TEXT)
+        if state.state_yt[state.ALL_CHANNELS_RETRIEVED]:
+            state.clear_state(state.state_yt)  # Quote usage remains and it will not be cleared out.
+        return
+
+    if state.continue_to_retrieve(state.state_yt) and state.ACTION_RETRIEVE_CHANNELS_ALL_VIDEOS in state.state_yt[
+        state.LIST_ACTIONS]:
+        resume_channels_all_videos_retrievals(youtube, state.state_yt)
+        # Check if the retrieval finished
+        if state.ACTION_RETRIEVE_CHANNELS_ALL_VIDEOS not in state.state_yt[state.LIST_ACTIONS]:
+            print("Call procedure to merge files")
+            success = output_channel_retrievals(OUTPUT_CHANNEL_ALL_VIDEOS_FILE_NAME)
+        notify_user_channel(CHANNEL_ALL_VIDEOS_TEXT)
+        notify_user_channel_on_file(CHANNEL_ALL_VIDEOS_TEXT)
+        if state.state_yt[state.ALL_CHANNELS_RETRIEVED]:
+            state.clear_state(state.state_yt)  # Quote usage remains and it will not be cleared out.
+        return
+
+    if state.continue_to_retrieve(state.state_yt) and state.ACTION_RETRIEVE_CHANNELS_ACTIVITY in state.state_yt[
+        state.LIST_ACTIONS]:
+        resume_channels_activity_retrievals(youtube, state.state_yt)
+        # Check if the retrieval finished
+        if state.ACTION_RETRIEVE_CHANNELS_ACTIVITY not in state.state_yt[state.LIST_ACTIONS]:
+            print("\nCalling procedure to merge files \n")
+            success = output_channel_retrievals(OUTPUT_CHANNEL_ACTIVITY_FILE_NAME)
+        notify_user_channel(CHANNEL_ACTIVITY_TEXT)
+        notify_user_channel_on_file(CHANNEL_ACTIVITY_TEXT)
+        if state.state_yt[state.ALL_CHANNELS_RETRIEVED]:
+            state.clear_state(state.state_yt)  # Quote usage remains and it will not be cleared out.
+        return
+
     if state.continue_to_retrieve(state.state_yt) and state.ACTION_RETRIEVE_VIDEOS in state.state_yt[state.LIST_ACTIONS]:
         resume_video_retrievals(youtube, state.state_yt)
 
@@ -334,45 +514,9 @@ def resume_retrievals():
         notify_user()
         notify_user_on_file()
 
-#=======================================================================================================================
-def resume_retrievals_1():
-    #Load current state
-    state.state_yt = state.load_state_from_file()
-    #state.print_state(state.state_yt)
-
-
-
-    if not state.continue_to_retrieve(state.state_yt):
-        print ("Out of quote.")
-        return
-
-    #There is nothing to retrieve
-    if len(state.state_yt[state.LIST_ACTIONS])==0:
-        notify_user(nothing_to_retrieve=True)
-        notify_user_on_file(nothing_to_retrieve=True)
-        state.state_yt = state.clear_state(state.state_yt)
-        return
-
-    #Create youtube data api service
-    youtube = build_service_api_key()
-    for action in state.state_yt[state.LIST_ACTIONS]:
-        if state.continue_to_retrieve(state.state_yt):
-            if action == state.ACTION_RETRIEVE_VIDEOS:
-                resume_video_retrievals(youtube, state.state_yt)
-            if action == state.ACTION_RETRIEVE_COMMENTS:
-                resume_comments_retrievals(youtube, state.state_yt)
-
-    if (len(state.state_yt[state.LIST_ACTIONS]) == 0) or (
-        (len(state.state_yt[state.LIST_ACTIONS]) == 1) and (state.ACTION_CREATE_NETWORK in state.state_yt[state.LIST_ACTIONS])):
-            # Only network action should remain, if everything has been processed.
-            success = output_retrievals()
-            notify_user(success=success)
-            state.clear_state(state.state_yt) #Quote usage remains and it will not be cleared out.
-    else:
-        notify_user()
 
 if __name__ == "__main__":
-    reset_quote()
+    #reset_quote()
     resume_retrievals()
     #state.state_yt = state.load_state_from_file()
     #print ("=======================================")
