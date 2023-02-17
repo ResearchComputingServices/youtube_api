@@ -457,7 +457,7 @@ def check_out_of_quote():
 #-----------------------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
     initialize_quote()
-    #state.state_yt = state.set_quote_usage(state.state_yt,3099)
+    #state.state_yt = state.set_quote_usage(state.state_yt,1097)
     #state.print_state(state.state_yt)
     state.print_quote_usage()
     check_out_of_quote()

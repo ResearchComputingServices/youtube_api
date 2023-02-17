@@ -1,5 +1,6 @@
 import state
 import pandas as pd
+import shutil
 from channels import get_videos_and_videocreators_from_file
 from channels import get_metadata_channels_from_file
 from channels import get_all_videos_by_all_channels_from_file
@@ -221,6 +222,7 @@ def notify_user_on_file(nothing_to_retrieve=False, success=True):
         #Open file
         name = get_filename("summary","txt")
         fullname = get_fullpath("summaries", name)
+        fullname_plain = get_fullpath("summaries", "summary.txt")
         f = open(fullname,'w+')
 
         f.write("\n*****************************************************************\n")
@@ -292,6 +294,7 @@ def notify_user_on_file(nothing_to_retrieve=False, success=True):
         f.write ("An error occurred while creating this summary. \n")
 
     f.close()
+    shutil.copyfile(fullname,fullname_plain)
 
 #-----------------------------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------------------
@@ -369,6 +372,7 @@ def notify_user_channel_on_file(text):
         #Open file
         name = get_filename("summary","txt")
         fullname = get_fullpath("summaries", name)
+        fullname_plain = get_fullpath("summaries", "summary.txt")
         f = open(fullname,'w+')
 
         f.write("\n*****************************************************************\n")
@@ -400,6 +404,7 @@ def notify_user_channel_on_file(text):
         f.write ("An error occurred while creating this summary. \n")
 
     f.close()
+    shutil.copyfile(fullname, fullname_plain)
 
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -505,18 +510,17 @@ def resume_retrievals():
     if (len(state.state_yt[state.LIST_ACTIONS]) == 0) or (
         (len(state.state_yt[state.LIST_ACTIONS]) == 1) and (state.ACTION_CREATE_NETWORK in state.state_yt[state.LIST_ACTIONS])):
         # Only network action should remain, if everything has been processed.
-        if state.state_yt[state.ALL_VIDEOS_RETRIEVED] and state.state_yt[state.ALL_COMMENTS_RETRIEVED]:
-            success = output_retrievals()
-            notify_user(success=success)
-            notify_user_on_file(success=success)
-            state.clear_state(state.state_yt) #Quote usage remains and it will not be cleared out.
+        success = output_retrievals()
+        notify_user(success=success)
+        notify_user_on_file(success=success)
+        state.clear_state(state.state_yt) #Quote usage remains and it will not be cleared out.
     else:
         notify_user()
         notify_user_on_file()
 
 
 if __name__ == "__main__":
-    #reset_quote()
+    reset_quote()
     resume_retrievals()
     #state.state_yt = state.load_state_from_file()
     #print ("=======================================")

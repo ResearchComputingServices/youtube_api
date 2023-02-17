@@ -363,26 +363,27 @@ def preprocess_string(string):
 
     prefix_list = ["="]
 
-    #string = "___" + string
-    for prefix in prefix_list:
-        string = string.strip()
-        try:
-            if string.startswith(prefix):
-                string = " " + string;
-        except:
-            string = "N/A"
+    # string = "___" + string
+    string = " " + string
 
+    #for prefix in prefix_list:
+    #    string = string.strip()
+    #    try:
+    #        if string.startswith(prefix):
+    #            string = " " + string;
+    #    except:
+    #        string = "N/A"
 
-    debug = True
-    if not debug:
-        for prefix in prefix_list:
-            string = string.strip()
-            try:
-                while string.startswith(prefix):
-                    l = len(string)
-                    string = string[1:l];
-            except:
-                string = "N/A"
+    #debug = True
+    #if not debug:
+    #    for prefix in prefix_list:
+    #        string = string.strip()
+    #        try:
+    #            while string.startswith(prefix):
+    #                l = len(string)
+    #                string = string[1:l];
+    #        except:
+    #            string = "N/A"
 
     return string
 
