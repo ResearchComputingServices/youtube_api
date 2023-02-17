@@ -353,6 +353,38 @@ def remove_prefix_url(url):
 
     return only_link
 
+#***********************************************************************************************************************
+#***********************************************************************************************************************
+def preprocess_string(string):
+    #Apparently all strings that stats with "=" are bothering excel.
+    #We will remove those.
+    # ***********************************************************************************************************************
+    # ***********************************************************************************************************************
+
+    prefix_list = ["="]
+
+    #string = "___" + string
+    for prefix in prefix_list:
+        string = string.strip()
+        try:
+            if string.startswith(prefix):
+                string = " " + string;
+        except:
+            string = "N/A"
+
+
+    debug = True
+    if not debug:
+        for prefix in prefix_list:
+            string = string.strip()
+            try:
+                while string.startswith(prefix):
+                    l = len(string)
+                    string = string[1:l];
+            except:
+                string = "N/A"
+
+    return string
 
 
 

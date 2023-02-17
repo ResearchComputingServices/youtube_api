@@ -7,15 +7,13 @@ import pandas as pd
 import emoji
 import datetime
 import state
-from utils import get_filename
 from utils import export_dict_to_excel
 from utils import export_dict_to_csv
-from utils import get_fullpath
-from utils import export_csv_to_excel
 from utils import get_ids_from_file
 from utils import get_filename_ordered
 from utils import remove_prefix_url
 from utils import export_dict_to_excel_unicode_escape
+from utils import preprocess_string
 from channels import get_channels_metadata
 
 
@@ -27,9 +25,8 @@ from channels import get_channels_metadata
 #returns a string without them
 #*****************************************************************************************************
 def soupify_comment(comment):
-    return comment
-    #soup = BeautifulSoup(comment, 'html.parser')
-    #return soup.get_text()
+    soup = BeautifulSoup(comment, 'html.parser')
+    return soup.get_text()
 
 #*****************************************************************************************************
 #This functions gets a comment (a string) and replaces the emojis with the emoji name and  the prefix
@@ -119,7 +116,7 @@ def get_comment_replies(youtube, parent_id):
                 part='id,snippet',
                 parentId = parent_id,
                 maxResults=state.MAX_REPLIES_PER_REQUEST,
-                textFormat='plainText',
+                #textFormat='plainText',
                 pageToken=nextPageToken
             )
             state.state_yt = state.update_quote_usage(state.state_yt, state.UNITS_COMMENTS_LIST)
@@ -177,8 +174,8 @@ def create_comment_dict(youtube, records, item, commentsCount, comment_number):
             if len(comment) > 0:
                 comment = soupify_comment(comment)
                 comment = demojize_comment(comment)
-            metadata["comment"] = comment
-            metadata["authorDisplayName"] = item["snippet"]["topLevelComment"]["snippet"].get("authorDisplayName", "")
+            metadata["comment"] = preprocess_string(comment)
+            metadata["authorDisplayName"] = preprocess_string(item["snippet"]["topLevelComment"]["snippet"].get("authorDisplayName", ""))
             metadata["authorProfileImageUrl"] = remove_prefix_url(item["snippet"]["topLevelComment"]["snippet"].get("authorProfileImageUrl"),                                                                                         "")
             metadata["authorChannelId"] = item["snippet"]["topLevelComment"]["snippet"]["authorChannelId"].get("value","")
             metadata["authorChannelUrl"] = remove_prefix_url(item["snippet"]["topLevelComment"]["snippet"].get("authorChannelUrl",""))
@@ -211,11 +208,11 @@ def create_comment_dict(youtube, records, item, commentsCount, comment_number):
                         comment = soupify_comment(comment)
                         comment = demojize_comment(comment)
 
-                    metadata["comment"] = comment
+                    metadata["comment"] = preprocess_string(comment)
                     metadata["authorChannelId"] = reply["snippet"]["authorChannelId"].get("value", "")
                     metadata["authorChannelUrl"] = remove_prefix_url(reply["snippet"].get("authorChannelUrl", ""))
-                    metadata["authorDisplayName"] = reply["snippet"].get("authorDisplayName", "")
-                    metadata["authorProfileImageUrl"] = reply["snippet"].get("authorProfileImageUrl", "")
+                    metadata["authorDisplayName"] = preprocess_string(reply["snippet"].get("authorDisplayName", ""))
+                    metadata["authorProfileImageUrl"] = remove_prefix_url(reply["snippet"].get("authorProfileImageUrl", ""))
                     metadata["likeCount"] = reply["snippet"].get("likeCount", "")
                     metadata["publishedAt"] = reply["snippet"].get("publishedAt", "")
                     metadata["scrappedAt"] = current_datetime_str
@@ -268,7 +265,7 @@ def get_video_comments(youtube, video_id, records=None):
                 part='id,snippet,replies',
                 videoId=video_id,
                 maxResults=state.MAX_COMMENTS_PER_REQUEST,    #maxResults = 100
-                textFormat = 'plainText',
+                #textFormat = 'plainText',
                 pageToken=nextPageToken
             )
 
@@ -340,8 +337,8 @@ def create_comment_and_commenter_dict(youtube, records, item, commentsCount, com
             if len(comment)>0:
                 comment = soupify_comment(comment)
                 comment = demojize_comment(comment)
-            metadata["comment"] = comment
-            metadata["authorDisplayName"] = item["snippet"]["topLevelComment"]["snippet"].get("authorDisplayName", "")
+            metadata["comment"] = preprocess_string(comment)
+            metadata["authorDisplayName"] = preprocess_string(item["snippet"]["topLevelComment"]["snippet"].get("authorDisplayName", ""))
             metadata["authorProfileImageUrl"] = remove_prefix_url(item["snippet"]["topLevelComment"]["snippet"].get("authorProfileImageUrl",""))
             commenter_channel_id = item["snippet"]["topLevelComment"]["snippet"]["authorChannelId"].get("value","")
             metadata["authorChannelId"] = commenter_channel_id
@@ -386,11 +383,11 @@ def create_comment_and_commenter_dict(youtube, records, item, commentsCount, com
                     if len(comment) > 0:
                         comment = soupify_comment(comment)
                         comment = demojize_comment(comment)
-                    metadata["comment"] = comment
+                    metadata["comment"] = preprocess_string(comment)
                     commenter_channel_id = reply["snippet"]["authorChannelId"].get("value", "")
                     metadata["authorChannelId"] = commenter_channel_id
                     metadata["authorChannelUrl"] = remove_prefix_url(reply["snippet"].get("authorChannelUrl", ""))
-                    metadata["authorDisplayName"] = reply["snippet"].get("authorDisplayName", "")
+                    metadata["authorDisplayName"] = preprocess_string(reply["snippet"].get("authorDisplayName", ""))
                     metadata["authorProfileImageUrl"] = remove_prefix_url(reply["snippet"].get("authorProfileImageUrl", ""))
                     metadata["likeCount"] = reply["snippet"].get("likeCount", "")
                     metadata["publishedAt"] = reply["snippet"].get("publishedAt", "")
@@ -447,7 +444,7 @@ def get_single_video_comments_and_commenters(youtube, video_id, commentsCount, r
                 part='id,snippet,replies',
                 videoId=video_id,
                 maxResults=state.MAX_COMMENTS_PER_REQUEST,    #maxResults = 100
-                textFormat='plainText',
+                #textFormat='plainText',
                 pageToken=nextPageToken
             )
 
@@ -758,138 +755,6 @@ def get_videos_comments_and_commenters(youtube, videos_ids, prefix_name, videos_
     return records
 
 
-#*****************************************************************************************************
-#This function retrieves all comments, its replies and its commenters ids (channel id) for a list of
-#videos given as a parameter (videos_id)
-#*****************************************************************************************************
-def get_videos_comments_and_commenters_to_csv(youtube, videos_ids, prefix_name, videos_comments_count=None, start_index = None):
-
-    records = {}
-
-    if not start_index:
-       start_index = 0
-
-    directory = 'output'
-    filename_comments_xlsx, filename_comments_csv, filename_subcomments = _save_state(start_index, directory, prefix_name)
-    state.print_state(state.state_yt)
-
-    #Retrieve the comment count per video (if not preivously retrieved)
-    if not videos_comments_count:
-        videos_ids, videos_comments_count =  obtain_total_comments_for_videos_ids(youtube, videos_ids)
-        if not videos_ids or not videos_comments_count:
-            return records
-
-    first_time = True
-    while (start_index < len(videos_ids)):
-        try:
-            channelId_commenters = []
-            records = {}
-            channel_records = {}
-            inc = 0
-            while (len(channelId_commenters) < state.MAX_CHANNELS_PER_REQUEST) and (start_index+inc < len(videos_ids)):
-                video_id = videos_ids[start_index + inc]
-                video_id_comments_count = videos_comments_count[video_id]
-                comments_cost = state.total_requests_cost(video_id_comments_count, state.MAX_COMMENTS_PER_REQUEST, state.UNITS_COMMENTS_LIST)
-                commenters_cost = state.total_requests_cost(video_id_comments_count, state.MAX_CHANNELS_PER_REQUEST, state.UNITS_CHANNELS_LIST)
-
-                fully_retrieved = False
-                #We do not have enough quote to retrieve the comments for this video along with its commenter's info
-                if not state.under_quote_limit(state.state_yt,comments_cost+commenters_cost):
-                    break
-
-                print("***** Fetching comments for video: " + video_id)
-                records, channelId_commenters, fully_retrieved = get_single_video_comments_and_commenters(youtube, video_id, videos_comments_count[video_id], records, channelId_commenters)
-                if not fully_retrieved:
-                    # The videos's comments were not fully retrieved because we run out of quote while retrieving some
-                    # of the comments
-                    break
-
-                inc = inc + 1
-                channelId_commenters = list(set(channelId_commenters))
-
-            if not fully_retrieved:
-                break
-
-
-            if len(records)==0 or len(channelId_commenters)==0:
-                return records
-
-
-
-            #Check that we have quote to retrieve commenters
-            if not state.under_quote_limit(state.state_yt,commenters_cost):
-               break
-
-            #Retrieving channel info
-            print("*** Fetching commenters info")
-            # Get commenter's channels metadata
-            # We request at most 50 channels at the time to avoid breaking the API
-            slice = True
-            start = 0
-            while (slice):
-                end = start + state.MAX_CHANNELS_PER_REQUEST
-                if end > len(channelId_commenters):
-                    end = len(channelId_commenters)
-                    slice = False
-
-                if len(channelId_commenters[start:end]) > 0:
-                    r = get_channels_metadata(youtube, channelId_commenters[start:end], False)
-                    channel_records.update(r)
-
-                start = end
-
-            for key, item in records.items():
-                try:
-                    channel_id_commenter = item["authorChannelId"]
-                    channel_info = channel_records[channel_id_commenter]
-                    item.update(channel_info)
-                except:
-                    print ('Error on: ' + channel_id_commenter)
-
-            #Export info to excel
-            print ("*** Saving Info")
-            if first_time:
-                #Create the first time the file
-                first_time = False
-                filename_comments_path = export_dict_to_csv(records, directory, filename_comments_csv, mode='w',
-                                                           index=True, header=True)
-                filename_subcomments_path = _save_subcomments(records, directory, filename_subcomments, mode='w',
-                                                           index=True, header=True)
-
-            else:
-                #Append afterwards (not elegant :-|, I know)
-                filename_comments_path = export_dict_to_csv(records, directory, filename_comments_csv, mode='a',
-                                                           index=True, header=False)
-                filename_subcomments_path = _save_subcomments(records, directory, filename_subcomments, mode='a',
-                                                           index=True, header=False)
-
-            #Videos' comments and commenters were sucessfully retrieved and saved to disk
-            #Save state
-            start_index = start_index + inc
-            state.state_yt = state.set_video_index(state.state_yt, start_index)
-
-        except:
-            print("Error on getting video comments and commenters")
-            print(sys.exc_info()[0])
-            traceback.print_exc()
-
-    print("\n")
-
-    print("Output: " + get_fullpath(directory,filename_comments_xlsx))
-    print ("Output: "  +filename_subcomments_path)
-
-    export_csv_to_excel(filename_comments_path,get_fullpath(directory,filename_comments_xlsx))
-    #Remove CSV files to avoid excess of files.
-    #delete_file(filename_comments_csv_path)
-
-
-    if start_index>=len(videos_ids):
-        #All videos were retrieved
-        state.state_yt = state.remove_action(state.state_yt, state.ACTION_RETRIEVE_COMMENTS)
-
-
-    #export_comments_videos_for_network(records)
-    return records
 
 
 #*****************************************************************************************************

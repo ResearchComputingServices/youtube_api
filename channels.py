@@ -4,7 +4,7 @@ import datetime
 import state
 from utils import export_dict_to_excel
 from utils import get_filename
-from utils import read_excel_file_to_data_frame
+from utils import preprocess_string
 from utils import convert_to_local_zone
 from utils import get_ids_from_file
 from videos import create_video_metadata
@@ -37,7 +37,7 @@ def get_channel_activity(youtube, channel_id):
                         actType = item["snippet"].get("title",None)
                         if not actType:
                             actType = item["snippet"].get("channelTitle","NA")
-                        record["activityTitle"] = actType
+                        record["activityTitle"] = preprocess_string(actType)
                     break
             else:
                 record=-1
@@ -60,8 +60,8 @@ def create_channel_dict(youtube, item):
         record ={}
         record["channelId"] = item["id"]
         if "snippet" in item:
-            record["channel_title"] = item["snippet"].get("title","NA")
-            record["channel_description"] = item["snippet"].get("description","NA")
+            record["channel_title"] = preprocess_string(item["snippet"].get("title","NA"))
+            record["channel_description"] = preprocess_string(item["snippet"].get("description","NA"))
             record["channel_url"] = "www.youtube.com/channel/" + item["id"]
             record["channel_JoinDate"] = item["snippet"].get("publishedAt","NA")
             record["channel_country"] = item["snippet"].get("country","NA")
@@ -98,9 +98,9 @@ def create_video_and_creator_dict(item, channels_records):
 
         title = ""
         if "snippet" in item:
-            title = item["snippet"].get("title", "N/A")
+            title = preprocess_string(item["snippet"].get("title", "N/A"))
             publishedDate = convert_to_local_zone(item["snippet"].get("publishedAt", None))
-            description = item["snippet"].get("description", "N/A")
+            description = preprocess_string(item["snippet"].get("description", "N/A"))
             channelId = item["snippet"].get("channelId", "N/A")
 
 
