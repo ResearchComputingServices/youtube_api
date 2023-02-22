@@ -44,6 +44,7 @@ MAX_PLAYLISTITEMS_PER_REQUEST = 50
 MAX_SEARCH_RESULTS_PER_REQUEST = 50
 DEFAULT_VIDEOS_TO_RETRIEVE = 200
 MAX_VIDEOS_TO_RETRIEVE = 500
+MAX_PAGES_SEARCHES = 10   #Each page of 50 results (500 units at most)
 
 ACTION_RETRIEVE_VIDEOS = "retrieve_videos"
 ACTION_RETRIEVE_COMMENTS = "retrieve_comments"
@@ -286,7 +287,8 @@ def clear_state(state, clear_quote=False, clear_api_key=False):
     return state
 
 def print_state(state):
-    print("api_key: "  + state["api_key"])
+    #print("api_key: "  + state["api_key"])
+    print ("Below information is for debugging purposes: ******************")
     print("quote_usage: " + str(state["quote_usage"]))
     print("actions: ")
     print (state["actions"])

@@ -185,7 +185,7 @@ def get_all_videos_by_a_channel(youtube, channel_id):
     pages = 1
 
     try:
-        while True:
+        while True and pages<=state.MAX_PAGES_SEARCHES:
             if state.under_quote_limit(state.state_yt, state.UNITS_SEARCH_LIST+state.UNITS_VIDEOS_LIST):
                 video_channels_request = youtube.search().list(
                     part="snippet",
@@ -235,7 +235,6 @@ def get_all_videos_by_a_channel(youtube, channel_id):
         print("Error on getting all videos by a channel ")
         print(sys.exc_info()[0])
         traceback.print_exc()
-        return None
 
     return records
 

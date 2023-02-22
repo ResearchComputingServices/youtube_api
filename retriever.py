@@ -441,9 +441,20 @@ def notify_user_channel(text):
 #-----------------------------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------------------
 def resume_retrievals():
+
+    print ("************************************************************************************************")
+    now = datetime.now()
+    dt_string = now.strftime("%b %d %Y %H:%M:%S")
+    print(dt_string)
+    print ("Running Retriever ....\n")
+
+
     #Load current state
     state.state_yt = state.load_state_from_file()
+    print ("Current state: \n")
     state.print_state(state.state_yt)
+    print ("************************************************************************************************")
+    print ("\n")
 
     if not state.continue_to_retrieve(state.state_yt):
         print ("Out of quote.")
