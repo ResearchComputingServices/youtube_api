@@ -288,7 +288,7 @@ def clear_state(state, clear_quote=False, clear_api_key=False):
 
 def print_state(state):
     #print("api_key: "  + state["api_key"])
-    print ("Below information is for debugging purposes: ******************")
+    print ("The information below is for debugging purposes: ******************")
     print("quote_usage: " + str(state["quote_usage"]))
     print("actions: ")
     print (state["actions"])
