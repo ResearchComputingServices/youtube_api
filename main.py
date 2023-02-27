@@ -52,6 +52,11 @@ def get_input_arguments():
                            action='store',
                            help='Filename (for options: 6, 7, 9, 10, 11)')
 
+    my_parser.add_argument('-a',
+                           '--admin',
+                           action='store',
+                           help='Admin Menu')
+
     # Execute the parse_args() method
     args = my_parser.parse_args()
     option = args.option
@@ -59,8 +64,9 @@ def get_input_arguments():
     query = args.query
     videos = args.videos
     filename = args.filename
+    admin = args.admin
 
-    return option, playlist, query, videos, filename
+    return option, playlist, query, videos, filename, admin
 
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -108,9 +114,9 @@ def display_menu():
     print("[7]: FILE: Comments and Commenters - $$")
     print("[8]: FILE: Network ")
     print("---------------------------------------------------")
-    print("[9]: CHANNEL: Metadata - $")
-    print("[10]: CHANNEL: All Videos - $$$$$")
-    print("[11]: CHANNEL: Latest Activity - $$$$")
+    print("[9]: CHANNEL: Metadata - $$")
+    print("[10]: CHANNEL: All Videos - $$$$$$")
+    print("[11]: CHANNEL: Latest Activity - $$")
     print("---------------------------------------------------")
     print("[12] Compare video's retrieval")
     print("[13] Compare comments' retrieval")
@@ -173,7 +179,7 @@ def execute_option_restricted(option):
         except:
             quote = 0
 
-        proceed = input('Are you sure to proceed? [Y/N]')
+        proceed = input('Are you sure to proceed? [Y/N] ')
         if proceed.upper() != "Y":
             sys.exit()
 
@@ -469,7 +475,13 @@ if __name__ == "__main__":
         sys.exit()
 
     #Get input argments to run options without user intervention
-    option, playlist, query, videos, filename = get_input_arguments()
+    option, playlist, query, videos, filename, admin = get_input_arguments()
+
+    if admin:
+        option = display_restricted_menu()
+        execute_option_restricted(option)
+        sys.exit()
+
     if option:
         execute_option(option, playlist, query, videos, filename)
         check_out_of_quote()

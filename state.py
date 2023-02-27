@@ -77,7 +77,7 @@ ALL_CHANNELS_RETRIEVED = "all_channels_retrieved"
 STATE_DIRECTORY = "state"
 STATE_FILENAME = "state.pkl"
 
-SAFETY_BACKUP = 200
+SAFETY_BACKUP = 0
 
 
 state_yt = { "api_key" : "",
@@ -293,6 +293,7 @@ def print_state(state):
     print("actions: ")
     print (state["actions"])
     print ("videos_ids_file: " + state["videos_ids_file"])
+    print ("channels_ids_file: " + state["channels_ids_file"])
     comments_file = ""
     if state[COMMENTS_COUNT_FILE]:
         comments_file = state[COMMENTS_COUNT_FILE]

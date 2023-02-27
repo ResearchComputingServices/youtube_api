@@ -381,7 +381,7 @@ def notify_user_channel_on_file(text):
         dt_string = now.strftime("%b %d %Y %H:%M:%S")
         f.write(dt_string)
         f.write("\n")
-        f.write(state.print_quote_usage())
+
 
         f.write(text)
         if len(state.state_yt[state.LIST_CHANNELS_TO_MERGE]) > 0:
@@ -402,6 +402,8 @@ def notify_user_channel_on_file(text):
             f.write(text)
     except:
         f.write ("An error occurred while creating this summary. \n")
+        f.write (sys.exc_info()[0])
+        traceback.print_exc()
 
     f.close()
     shutil.copyfile(fullname, fullname_plain)

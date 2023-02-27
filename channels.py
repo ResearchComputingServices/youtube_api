@@ -557,9 +557,10 @@ def get_all_videos_by_all_channels_from_file(youtube, filename, prefix, start_in
 # **********************************************************************************************************************
 def remove_duplicates(list):
     clean_list=[]
-    for item in list:
-        if item not in clean_list:
-            clean_list.append(item)
+    if list and len(list)>0:
+        for item in list:
+            if item not in clean_list:
+                clean_list.append(item)
     return clean_list
 
 # ***********************************************************************************************************************
