@@ -122,7 +122,6 @@ def display_menu():
     print("[13] Compare comments' retrieval")
     print("---------------------------------------------------")
     print("[14] Print Quote Usage")
-    print("[15] Reset State")
     print("---------------------------------------------------")
     print("[X]: Exit")
 
@@ -318,17 +317,17 @@ def execute_option_interactive(option):
         return
 
 
-    if option == "15":
-        print ("This option will remove any retrieving actions that are in queue.")
-        quote_str = input  ("Quote usage (optional): ")
-        try:
-            quote = int(quote_str)
-        except:
-            quote = 0
-
-        proceed = input('Are you sure to proceed? [Y/N]')
-        if proceed.upper() != "Y":
-            sys.exit()
+    #if option == "15":
+    #    print ("This option will remove any retrieving actions that are in queue.")
+    #    quote_str = input  ("Quote usage (optional): ")
+    #    try:
+    #        quote = int(quote_str)
+    #    except:
+    #        quote = 0
+    #
+    #    proceed = input('Are you sure to proceed? [Y/N]')
+    #    if proceed.upper() != "Y":
+    #        sys.exit()
 
         state.state_yt = state.clear_state(state.state_yt, clear_quote=True, clear_api_key=False)
         state.state_yt = state.set_quote_usage(state.state_yt, quote)
@@ -466,21 +465,23 @@ if __name__ == "__main__":
     #state.state_yt = state.set_quote_usage(state.state_yt,1097)
     #state.print_state(state.state_yt)
     state.print_quote_usage()
-    check_out_of_quote()
 
-    # youtube = build_service_oauth()
-    youtube = build_service_api_key()
-    if not youtube:
-        print("Error when creating API Youtube service.")
-        sys.exit()
-
-    #Get input argments to run options without user intervention
+    # Get input arguments to run options without user intervention
     option, playlist, query, videos, filename, admin = get_input_arguments()
 
     if admin:
         option = display_restricted_menu()
         execute_option_restricted(option)
         sys.exit()
+
+    #Check quote usage
+    check_out_of_quote()
+
+    youtube = build_service_api_key()
+    if not youtube:
+        print("Error when creating API Youtube service.")
+        sys.exit()
+
 
     if option:
         execute_option(option, playlist, query, videos, filename)

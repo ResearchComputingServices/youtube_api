@@ -478,8 +478,8 @@ def filter_videos_by_comments_count(comments_count_original):
     for video_id, total_comments in comments_count_original.items():
         if not (total_comments  == '0' or total_comments == 'N/A'):
             cost = state.total_requests_cost(int(total_comments),state.MAX_COMMENTS_PER_REQUEST,state.UNITS_COMMENTS_LIST)
-            if cost < 10000:
-                #if cost < state.UNITS_QUOTE_LIMIT:
+            #if cost < 10000:
+            if cost < state.UNITS_QUOTE_LIMIT:
                 comments_count[video_id] =  int(total_comments)
             else:
                 print ("Video {} has {} comments. It cannot be retrieved with current quote. ".format(video_id,total_comments))
