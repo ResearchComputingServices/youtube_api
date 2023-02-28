@@ -77,7 +77,7 @@ ALL_CHANNELS_RETRIEVED = "all_channels_retrieved"
 STATE_DIRECTORY = "state"
 STATE_FILENAME = "state.pkl"
 
-SAFETY_BACKUP = 200
+SAFETY_BACKUP = 0
 
 
 state_yt = { "api_key" : "",

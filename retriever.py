@@ -242,7 +242,7 @@ def notify_user_on_file(nothing_to_retrieve=False, success=True):
 
         if len(state.state_yt["videos_merged"]) > 0:
             if state.state_yt["videos_merged"] != "-1":
-                f.write("\n** File with merged retrievals' videos are located in: \n")
+                f.write("\n** File with merged retrievals' videos is located in: \n")
                 f.write(state.state_yt["videos_merged"])
                 f.write("\n")
             else:
@@ -261,7 +261,7 @@ def notify_user_on_file(nothing_to_retrieve=False, success=True):
 
         if len(state.state_yt["comments_merged"]) > 0:
             if state.state_yt["comments_merged"] != "-1":
-                f.write("\n** File with merged retrievals' comments are located in: \n")
+                f.write("\n** File with merged retrievals' comments is located in: \n")
                 f.write(state.state_yt["comments_merged"])
                 f.write("\n")
             else:
@@ -283,7 +283,7 @@ def notify_user_on_file(nothing_to_retrieve=False, success=True):
                 else:
                     f.write("** An error ocurred while retrieving and/or merging files. Please try the request again. \n")
         else:
-            f.write("** The following actions will be completed when quote is available: \n")
+            f.write("** The following actions will be completed when quota is available: \n")
             if (state.ACTION_RETRIEVE_VIDEOS in state.state_yt["actions"]):
                 f.write("Retrieve videos \n")
             if (state.ACTION_RETRIEVE_COMMENTS in state.state_yt["actions"]):
@@ -316,7 +316,7 @@ def notify_user(nothing_to_retrieve=False, success=True):
 
     if len(state.state_yt["videos_merged"])>0:
         if state.state_yt["videos_merged"]!="-1":
-            print ("\n** File with merged retrievals' videos are located in: ")
+            print ("\n** File with merged retrievals' videos is located in: ")
             print(state.state_yt["videos_merged"])
         else:
             print ("An error occurred when merging retrieved video files. \n")
@@ -333,7 +333,7 @@ def notify_user(nothing_to_retrieve=False, success=True):
 
     if len(state.state_yt["comments_merged"])>0:
         if state.state_yt["comments_merged"]!="-1":
-            print ("\n** File with merged retrievals' comments are located in: ")
+            print ("\n** File with merged retrievals' comments is located in: ")
             print(state.state_yt["comments_merged"])
         else:
             print("An error occurred when merging retrieved comments files.")
@@ -353,7 +353,7 @@ def notify_user(nothing_to_retrieve=False, success=True):
             else:
                 print ("** An error ocurred while retrieving and/or merging files. Please try the request again.")
     else:
-        print ("** The following actions will be completed when quote is available: ")
+        print ("** The following actions will be completed when quota is available: ")
         if (state.ACTION_RETRIEVE_VIDEOS in state.state_yt["actions"]):
             print ("Retrieve videos ")
         if (state.ACTION_RETRIEVE_COMMENTS in state.state_yt["actions"]):
@@ -392,13 +392,13 @@ def notify_user_channel_on_file(text):
 
         if len(state.state_yt[state.CHANNELS_MERGED]) > 0:
             if state.state_yt[state.CHANNELS_MERGED] != "-1":
-                f.write("\n** File with merged channel's retrievals are located in: \n")
+                f.write("\n** File with merged channel's retrievals is located in: \n")
                 f.write(state.state_yt[state.CHANNELS_MERGED])
                 f.write("\n")
             else:
                 f.write("An error occurred when merging retrieved channel's files. \n")
         else:
-            f.write("** The following actions will be completed when quote is available: \n")
+            f.write("** The following actions will be completed when quota is available: \n")
             f.write(text)
     except:
         f.write ("An error occurred while creating this summary. \n")
@@ -430,12 +430,12 @@ def notify_user_channel(text):
 
     if len(state.state_yt[state.CHANNELS_MERGED])>0:
         if state.state_yt[state.CHANNELS_MERGED]!="-1":
-            print ("\n** File with merged channel's retrievals are located in: ")
+            print ("\n** File with merged channel's retrievals is located in: ")
             print(state.state_yt[state.CHANNELS_MERGED])
         else:
             print ("An error occurred when merging retrieved channel's files. \n")
     else:
-        print("** The following actions will be completed when quote is available: ")
+        print("** The following actions will be completed when quota is available: ")
         print (text)
 
 
@@ -459,7 +459,7 @@ def resume_retrievals():
     print ("\n")
 
     if not state.continue_to_retrieve(state.state_yt):
-        print ("Out of quote.")
+        print ("Out of quota.")
         return
 
     #There is nothing to retrieve

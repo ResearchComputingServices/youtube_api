@@ -18,7 +18,7 @@ from utils import get_playlist_id
 from utils import get_api_key
 import state
 
-OUT_OF_QUOTE_MSG = "Quote limit has been reached for today. Please restart the app tomorrow."
+OUT_OF_QUOTE_MSG = "Quota limit has been reached for today. Please restart the app tomorrow."
 STATE_IN_USE_MSG = "There are retrieving actions in queue. Please restart the app tomorrow."
 
 
@@ -121,7 +121,7 @@ def display_menu():
     print("[12] Compare video's retrieval")
     print("[13] Compare comments' retrieval")
     print("---------------------------------------------------")
-    print("[14] Print Quote Usage")
+    print("[14] Print Quota Usage")
     print("---------------------------------------------------")
     print("[X]: Exit")
 
@@ -140,7 +140,7 @@ def display_menu():
 def display_restricted_menu():
     print('\n-------------------- Options --------------------\n')
 
-    print("[1] Print Quote Usage")
+    print("[1] Print Quota Usage")
     print("[2] Print State")
     print("[3] Reset State")
     print("---------------------------------------------------")
@@ -172,7 +172,7 @@ def execute_option_restricted(option):
 
     if option == "3":
         print ("This option will remove any retrieving actions that are in queue.")
-        quote_str = input  ("New quote usage (optional): ")
+        quote_str = input  ("New quota usage (optional): ")
         try:
             quote = int(quote_str)
         except:
@@ -250,7 +250,7 @@ def execute_option_interactive(option):
         max_videos_with_quote = state.number_of_items_with_quote(state.UNITS_SEARCH_LIST,
                                                                  state.MAX_SEARCH_RESULTS_PER_REQUEST)
 
-        print ("Maximum videos to retrieve with available quote is: {}".format(max_videos_with_quote))
+        print ("Maximum videos to retrieve with available quota is: {}".format(max_videos_with_quote))
         numberVideos_str = input("Enter number of videos to retrieve (optional, default is {}): ".format(state.DEFAULT_VIDEOS_TO_RETRIEVE))
         try:
             numberVideos = int(numberVideos_str)

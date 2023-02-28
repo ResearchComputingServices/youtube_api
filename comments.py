@@ -482,7 +482,7 @@ def filter_videos_by_comments_count(comments_count_original):
             if cost < state.UNITS_QUOTE_LIMIT:
                 comments_count[video_id] =  int(total_comments)
             else:
-                print ("Video {} has {} comments. It cannot be retrieved with current quote. ".format(video_id,total_comments))
+                print ("Video {} has {} comments. It cannot be retrieved with current quota. ".format(video_id,total_comments))
                 #Save to file to notify user - TO DO
     return comments_count
 
@@ -655,7 +655,7 @@ def get_videos_comments_and_commenters(youtube, videos_ids, prefix_name, videos_
                 fully_retrieved = False
                 #We do not have enough quote to retrieve the comments for this video along with its commenter's info
                 if not state.under_quote_limit(state.state_yt,comments_cost+commenters_cost):
-                    print ("There is no enough quote to continue retrieving comments.")
+                    print ("There is not enough quota to continue retrieving comments.")
                     break
 
                 print("***** Fetching comments for video: " + video_id)
@@ -663,7 +663,7 @@ def get_videos_comments_and_commenters(youtube, videos_ids, prefix_name, videos_
                 if not fully_retrieved:
                     # The videos's comments were not fully retrieved because we run out of quote while retrieving some
                     # of the comments
-                    print("There is no enough quote to continue retrieving comments.")
+                    print("There is not enough quota to continue retrieving comments.")
                     break
 
                 inc = inc + 1
@@ -679,7 +679,7 @@ def get_videos_comments_and_commenters(youtube, videos_ids, prefix_name, videos_
             commenters_cost = state.total_requests_cost(len(channelId_commenters), state.MAX_CHANNELS_PER_REQUEST,
                                                         state.UNITS_CHANNELS_LIST)
             if not state.under_quote_limit(state.state_yt,commenters_cost):
-                print("There is no enough quote to continue retrieving comments.")
+                print("There is not enough quota to continue retrieving comments.")
                 break
 
             #Retrieving channel info

@@ -473,7 +473,7 @@ def get_channels_activity_from_file(youtube, filename, prefix, start_index=None)
                 state.state_yt = state.remove_action(state.state_yt, state.ACTION_RETRIEVE_CHANNELS_ACTIVITY)
                 state.state_yt = state.set_all_retrieved(state.state_yt, state.ALL_CHANNELS_RETRIEVED, True)
             else:
-                print("\nOut of quote. Not all the channels were processed. \n")
+                print("\nOut of . Not all the channels were processed. \n")
         else:
             print ("Channel's ids couldn't be retrieved. Check input file.")
     except:
@@ -542,7 +542,7 @@ def get_all_videos_by_all_channels_from_file(youtube, filename, prefix, start_in
                 state.state_yt = state.remove_action(state.state_yt, state.ACTION_RETRIEVE_CHANNELS_ALL_VIDEOS)
                 state.state_yt = state.set_all_retrieved(state.state_yt, state.ALL_CHANNELS_RETRIEVED, True)
             else:
-                print("Out of quote. Not all the channels were processed.")
+                print("Out of quota. Not all the channels were processed.")
         else:
             print ("Channel's ids couldn't be retrieved. Check input file.")
     except:
@@ -609,7 +609,7 @@ def get_metadata_channels_from_file(youtube, filename, prefix, start_index = Non
                 state.state_yt = state.remove_action(state.state_yt, state.ACTION_RETRIEVE_CHANNELS_METADATA)
                 state.state_yt = state.set_all_retrieved(state.state_yt, state.ALL_CHANNELS_RETRIEVED, True)
             else:
-                print ("Out of quote. Not all the channels were processed.")
+                print ("Out of . Not all the channels were processed.")
         else:
             print("Channel's ids couldn't be retrieved. Check input file.")
     except:
