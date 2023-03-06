@@ -1,11 +1,12 @@
 from utils import convert_to_local_zone
 from utils import export_dict_to_excel
+from utils import preprocess_string
 from transcripts import get_video_transcript
 from transcripts import write_transcript_to_file
 import datetime
-import pprint
 import traceback
 import sys
+import state
 
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -20,13 +21,13 @@ def create_video_metadata(item):
 
         title = ""
         if "snippet" in item:
-            title = item["snippet"].get("title", "N/A")
+            title = preprocess_string(item["snippet"].get("title", "N/A"))
             publishedDate = convert_to_local_zone(item["snippet"].get("publishedAt", None))
-            description = item["snippet"].get("description", "N/A")
+            description = preprocess_string(item["snippet"].get("description", "N/A"))
             channelId = item["snippet"].get("channelId", "N/A")
 
 
-        url = "https://youtu.be/" + videoId
+        url = "youtu.be/" + videoId
 
         if "statistics" in item:
             views =  item["statistics"].get("viewCount", "N/A")
@@ -99,7 +100,9 @@ def get_video_metadata(youtube, video_id):
         id=video_id
     )
 
+    state.state_yt = state.update_quote_usage(state.state_yt, state.UNITS_VIDEOS_LIST)
     videos_response = videos_request.execute()
+
 
     for item in videos_response['items']:
         metadata = create_video_metadata(item)

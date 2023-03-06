@@ -4,6 +4,9 @@ from utils import get_filename
 from utils import read_excel_file_to_data_frame
 import pathlib
 import os
+import sys
+import traceback
+import state
 from werkzeug.utils import secure_filename
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -109,33 +112,39 @@ def export_comments_videos_for_network(records=None, filename=None):
 def export_network_file(prefix_name, videos_records=None, comments_records=None, videosFilename=None, commentsFilename=None):
 
     filename_path = ""
-
-    if videos_records and comments_records:
-        df_videos = export_channels_videos_for_network(records=videos_records)
-        df_comments = export_comments_videos_for_network(records=comments_records)
-    else:
-        if videosFilename and commentsFilename:
-            df_videos = export_channels_videos_for_network(filename=videosFilename)
-            df_comments = export_comments_videos_for_network(filename=commentsFilename)
+    try:
+        if videos_records and comments_records:
+            df_videos = export_channels_videos_for_network(records=videos_records)
+            df_comments = export_comments_videos_for_network(records=comments_records)
         else:
+            if videosFilename and commentsFilename:
+                df_videos = export_channels_videos_for_network(filename=videosFilename)
+                df_comments = export_comments_videos_for_network(filename=commentsFilename)
+            else:
+                return filename_path
+
+        if (not df_videos) or (not df_comments):
+            print ("Error when creating network.")
             return filename_path
 
-    if (not df_videos) or (not df_comments):
-        print ("Error when creating network.")
-        return filename_path
+        dv = pd.DataFrame(df_videos)
+        dc = pd.DataFrame(df_comments)
+        df_merged = pd.concat([dv,dc],axis=1,ignore_index=True)
 
-    dv = pd.DataFrame(df_videos)
-    dc = pd.DataFrame(df_comments)
-    df_merged = pd.concat([dv,dc],axis=1,ignore_index=True)
+        directory = "network"
+        abs_path = pathlib.Path().resolve()
+        full_path = os.path.join(abs_path, directory)
+        filename = secure_filename(get_filename(prefix_name + "_network", "xlsx"))
+        filename_path = os.path.join(full_path, filename)
 
-    directory = "network"
-    abs_path = pathlib.Path().resolve()
-    full_path = os.path.join(abs_path, directory)
-    filename = secure_filename(get_filename(prefix_name + "_network", "xlsx"))
-    filename_path = os.path.join(full_path, filename)
+        df = df_merged.T
+        df.to_excel(filename_path,index=False)
+        state.remove_action(state.state_yt, state.ACTION_CREATE_NETWORK)
+    except:
+        print("Error on export_network_file ")
+        print(sys.exc_info()[0])
+        traceback.print_exc()
 
-    df = df_merged.T
-    df.to_excel(filename_path,index=False)
 
     return filename_path
 

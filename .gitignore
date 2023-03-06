@@ -3,6 +3,8 @@ api_key.json
 client_secrets.json
 client_secrets*.json
 config.json
+*.json
+*.sh
 
 *.xlsx
 *.pickle
@@ -14,3 +16,10 @@ config.json
 /versions
 /outputN
 /misc
+/output
+/network
+/state
+/summaries
+/misc
+/comments
+/output_Neel
