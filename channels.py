@@ -32,11 +32,11 @@ def get_channel_activity(youtube, channel_id):
             if len(responseActivities["items"])>0:
                 for item in responseActivities["items"]:
                     if "snippet" in item:
-                        record["activityDate"] = item["snippet"].get("publishedAt","NA")
-                        record["activityType"] = item["snippet"].get("type","NA")
+                        record["activityDate"] = item["snippet"].get("publishedAt","N/A")
+                        record["activityType"] = item["snippet"].get("type","N/A")
                         actType = item["snippet"].get("title",None)
                         if not actType:
-                            actType = item["snippet"].get("channelTitle","NA")
+                            actType = item["snippet"].get("channelTitle","N/A")
                         record["activityTitle"] = preprocess_string(actType)
                     break
             else:
@@ -60,16 +60,16 @@ def create_channel_dict(youtube, item):
         record ={}
         record["channelId"] = item["id"]
         if "snippet" in item:
-            record["channel_title"] = preprocess_string(item["snippet"].get("title","NA"))
-            record["channel_description"] = preprocess_string(item["snippet"].get("description","NA"))
+            record["channel_title"] = preprocess_string(item["snippet"].get("title","N/A"))
+            record["channel_description"] = preprocess_string(item["snippet"].get("description","N/A"))
             record["channel_url"] = "www.youtube.com/channel/" + item["id"]
-            record["channel_JoinDate"] = item["snippet"].get("publishedAt","NA")
-            record["channel_country"] = item["snippet"].get("country","NA")
+            record["channel_JoinDate"] = item["snippet"].get("publishedAt","N/A")
+            record["channel_country"] = item["snippet"].get("country","N/A")
 
         if "statistics" in item:
-            record["channel_viewCount"] = item["statistics"].get("viewCount","NA")
-            record["channel_subscriberCount"] = item["statistics"].get("subscriberCount","NA")
-            record["channel_videoCount"] = item["statistics"].get("videoCount","NA")
+            record["channel_viewCount"] = item["statistics"].get("viewCount","N/A")
+            record["channel_subscriberCount"] = item["statistics"].get("subscriberCount","N/A")
+            record["channel_videoCount"] = item["statistics"].get("videoCount","N/A")
 
         #last_activity_date = get_channel_activity(youtube, item["id"])
         #record.update(last_activity_date)
